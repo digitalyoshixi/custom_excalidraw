@@ -153,7 +153,7 @@ export default defineConfig({
         start_url: "/",
         display: "standalone",
         theme_color: "#121212",
-        background_color: "#ffffff",
+        background_color: "#fffce8",
         file_handlers: [
           {
             action: "/",

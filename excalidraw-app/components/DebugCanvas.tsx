@@ -84,7 +84,7 @@ const _debugRenderer = (
     scale,
     normalizedWidth,
     normalizedHeight,
-    viewBackgroundColor: "transparent",
+    viewBackgroundColor: "fffce8",
   });
 
   // Apply zoom

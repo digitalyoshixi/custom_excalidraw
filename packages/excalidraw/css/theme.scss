@@ -75,16 +75,16 @@
   --space-factor: 0.25rem;
   --text-primary-color: var(--color-on-surface);
 
-  --color-selection: #6965db;
+  --color-selection: #a0db65;
 
   --color-icon-white: #{$oc-white};
 
-  --color-primary: #6965db;
-  --color-primary-darker: #5b57d1;
-  --color-primary-darkest: #4a47b1;
-  --color-primary-light: #e3e2fe;
-  --color-primary-light-darker: #d7d5ff;
-  --color-primary-hover: #5753d0;
+  --color-primary: #86db65;
+  --color-primary-darker: #7ab351;
+  --color-primary-darkest: #2d8a43;
+  --color-primary-light: #afffc3;
+  --color-primary-light-darker: #d9ffd5;
+  --color-primary-hover: #42c362;
 
   --color-gray-10: #f5f5f5;
   --color-gray-20: #ebebeb;
@@ -112,8 +112,8 @@
   --color-danger-darkest: #d1413c;
   --color-danger-text: black;
 
-  --color-danger-background: #fff0f0;
-  --color-danger-icon-background: #ffdad6;
+  --color-danger-background: #f1fcca;
+  --color-danger-icon-background: #f1fcca;
   --color-danger-color: #700000;
   --color-danger-icon-color: #700000;
 
@@ -125,8 +125,8 @@
   --color-muted: var(--color-gray-30);
   --color-muted-darker: var(--color-gray-60);
   --color-muted-darkest: var(--color-gray-100);
-  --color-muted-background: var(--color-gray-80);
-  --color-muted-background-darker: var(--color-gray-100);
+  --color-muted-background: #f1fcca;
+  --color-muted-background-darker: #f1fcca;
 
   --color-promo: var(--color-primary);
 
@@ -139,23 +139,23 @@
   --color-success-contrast-active: #6edf74;
 
   --color-logo-icon: var(--color-primary);
-  --color-logo-text: #190064;
+  --color-logo-text: #055d12;
 
   --border-radius-md: 0.375rem;
   --border-radius-lg: 0.5rem;
 
-  --color-surface-high: #f1f0ff;
-  --color-surface-mid: #f2f2f7;
-  --color-surface-low: #ececf4;
+  --color-surface-high: #f3fff0;
+  --color-surface-mid: #f4f7f2;
+  --color-surface-low: #edf4ec;
   --color-surface-lowest: #ffffff;
   --color-on-surface: #1b1b1f;
-  --color-brand-hover: #5753d0;
-  --color-on-primary-container: #030064;
-  --color-surface-primary-container: #e0dfff;
-  --color-brand-active: #4440bf;
+  --color-brand-hover: #34d036;
+  --color-on-primary-container: #036400;
+  --color-surface-primary-container: #c1ffb3;
+  --color-brand-active: #4dbf40;
   --color-border-outline: #767680;
-  --color-border-outline-variant: #c5c5d0;
-  --color-surface-primary-container: #e0dfff;
+  --color-border-outline-variant: #c9d0c5;
+  --color-surface-primary-container: #a9ff87;
 
   --color-badge: #0b6513;
   --background-color-badge: #d3ffd2;
@@ -208,16 +208,16 @@
     --scrollbar-thumb-hover: #{$oc-gray-7};
 
     // will be inverted to a lighter color.
-    --color-selection: #3530c4;
+    --color-selection: #28ad17;
 
     --color-icon-white: var(--color-gray-90);
 
-    --color-primary: #a8a5ff;
-    --color-primary-darker: #b2aeff;
-    --color-primary-darkest: #beb9ff;
+    --color-primary: #abffa5;
+    --color-primary-darker: #69d463;
+    --color-primary-darkest: #d0ffb9;
     --color-primary-light: #4f4d6f;
     --color-primary-light-darker: #43415e;
-    --color-primary-hover: #bbb8ff;
+    --color-primary-hover: #c9ffb8;
 
     --color-disabled: var(--color-gray-70);
 
@@ -245,19 +245,19 @@
     --color-muted-background: var(--color-gray-40);
     --color-muted-background-darker: var(--color-gray-20);
 
-    --color-logo-text: #e2dfff;
+    --color-logo-text: #e4ffdf;
 
     --color-surface-high: hsl(245, 10%, 21%);
     --color-surface-low: hsl(240, 8%, 15%);
     --color-surface-mid: hsl(240 6% 10%);
     --color-surface-lowest: hsl(0, 0%, 7%);
-    --color-on-surface: #e3e3e8;
-    --color-brand-hover: #bbb8ff;
-    --color-on-primary-container: #e0dfff;
-    --color-surface-primary-container: #403e6a;
-    --color-brand-active: #d0ccff;
-    --color-border-outline: #8e8d9c;
-    --color-border-outline-variant: #46464f;
-    --color-surface-primary-container: #403e6a;
+    --color-on-surface: #e5e8e3;
+    --color-brand-hover: #d1ffb8;
+    --color-on-primary-container: #e7ffdf;
+    --color-surface-primary-container: #456a3e;
+    --color-brand-active: #cfffcc;
+    --color-border-outline: #8d9c8d;
+    --color-border-outline-variant: #474f46;
+    --color-surface-primary-container: #406a3e;
   }
 }
