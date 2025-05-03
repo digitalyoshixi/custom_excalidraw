@@ -1,16 +1,4 @@
-import type {
-  IMAGE_MIME_TYPES,
-  UserIdleState,
-  throttleRAF,
-  MIME_TYPES,
-} from "@excalidraw/common";
-
-import type { SuggestedBinding } from "@excalidraw/element/binding";
-
-import type { LinearElementEditor } from "@excalidraw/element/linearElementEditor";
-
-import type { MaybeTransformHandleType } from "@excalidraw/element/transformHandles";
-
+import type React from "react";
 import type {
   PointerType,
   ExcalidrawLinearElement,
@@ -34,30 +22,31 @@ import type {
   ExcalidrawIframeLikeElement,
   OrderedExcalidrawElement,
   ExcalidrawNonSelectionElement,
-} from "@excalidraw/element/types";
-
-import type {
-  Merge,
-  MaybePromise,
-  ValueOf,
-  MakeBrand,
-} from "@excalidraw/common/utility-types";
-
+} from "./element/types";
 import type { Action } from "./actions/types";
-import type { Spreadsheet } from "./charts";
-import type { ClipboardData } from "./clipboard";
+import type { LinearElementEditor } from "./element/linearElementEditor";
+import type { SuggestedBinding } from "./element/binding";
+import type { ImportedDataState } from "./data/types";
 import type App from "./components/App";
+import type { throttleRAF } from "./utils";
+import type { Spreadsheet } from "./charts";
+import type { Language } from "./i18n";
+import type { ClipboardData } from "./clipboard";
+import type { isOverScrollBars } from "./scene/scrollbars";
+import type { MaybeTransformHandleType } from "./element/transformHandles";
 import type Library from "./data/library";
+import type {
+  SubtypeMethods,
+  Subtype,
+  SubtypePrepFn,
+  SubtypeRecord,
+} from "./element/subtypes";
 import type { FileSystemHandle } from "./data/filesystem";
+import type { IMAGE_MIME_TYPES, MIME_TYPES } from "./constants";
 import type { ContextMenuItems } from "./components/ContextMenu";
 import type { SnapLine } from "./snapping";
-import type { CaptureUpdateActionType } from "./store";
-import type { ImportedDataState } from "./data/types";
-
-import type { Language } from "./i18n";
-import type { isOverScrollBars } from "./scene/scrollbars";
-import type React from "react";
-import type { JSX } from "react";
+import type { Merge, MaybePromise, ValueOf, MakeBrand } from "./utility-types";
+import type { StoreActionType } from "./store";
 
 export type SocketId = string & { _brand: "SocketId" };
 
@@ -123,11 +112,6 @@ export type BinaryFileData = {
    * Epoch timestamp in milliseconds.
    */
   lastRetrieved?: number;
-  /**
-   * indicates the version of the file. This can be used to determine whether
-   * the file dataURL has changed e.g. as part of restore due to schema update.
-   */
-  version?: number;
 };
 
 export type BinaryFileMetadata = Omit<BinaryFileData, "dataURL">;
@@ -136,7 +120,6 @@ export type BinaryFiles = Record<ExcalidrawElement["id"], BinaryFileData>;
 
 export type ToolType =
   | "selection"
-  | "lasso"
   | "rectangle"
   | "diamond"
   | "ellipse"
@@ -179,7 +162,6 @@ type _CommonCanvasAppState = {
   width: AppState["width"];
   height: AppState["height"];
   viewModeEnabled: AppState["viewModeEnabled"];
-  openDialog: AppState["openDialog"];
   editingGroupId: AppState["editingGroupId"]; // TODO: move to interactive canvas if possible
   selectedElementIds: AppState["selectedElementIds"]; // TODO: move to interactive canvas if possible
   frameToHighlight: AppState["frameToHighlight"]; // TODO: move to interactive canvas if possible
@@ -200,9 +182,6 @@ export type StaticCanvasAppState = Readonly<
     gridStep: AppState["gridStep"];
     frameRendering: AppState["frameRendering"];
     currentHoveredFontFamily: AppState["currentHoveredFontFamily"];
-    hoveredElementIds: AppState["hoveredElementIds"];
-    // Cropping
-    croppingElementId: AppState["croppingElementId"];
   }
 >;
 
@@ -225,9 +204,6 @@ export type InteractiveCanvasAppState = Readonly<
     snapLines: AppState["snapLines"];
     zenModeEnabled: AppState["zenModeEnabled"];
     editingTextElement: AppState["editingTextElement"];
-    // Cropping
-    isCropping: AppState["isCropping"];
-    croppingElementId: AppState["croppingElementId"];
     // Search matches
     searchMatches: AppState["searchMatches"];
   }
@@ -249,7 +225,6 @@ export type ObservedElementsAppState = {
   editingLinearElementId: LinearElementEditor["elementId"] | null;
   // Right now it's coupled to `editingLinearElement`, ideally it should not be really needed as we already have selectedElementIds & editingLinearElementId
   selectedLinearElementId: LinearElementEditor["elementId"] | null;
-  croppingElementId: AppState["croppingElementId"];
 };
 
 export interface AppState {
@@ -302,6 +277,10 @@ export interface AppState {
    */
   editingTextElement: NonDeletedExcalidrawElement | null;
   editingLinearElement: LinearElementEditor | null;
+  activeSubtypes?: Subtype[];
+  customData?: {
+    [subtype: Subtype]: ExcalidrawElement["customData"];
+  };
   activeTool: {
     /**
      * indicates a previous tool we should revert back to if we deselect the
@@ -309,8 +288,6 @@ export interface AppState {
      */
     lastActiveTool: ActiveTool | null;
     locked: boolean;
-    // indicates if the current tool is temporarily switched on from the selection tool
-    fromSelection: boolean;
   } & ActiveTool;
   penMode: boolean;
   penDetected: boolean;
@@ -354,9 +331,7 @@ export interface AppState {
     | null
     | { name: "imageExport" | "help" | "jsonExport" }
     | { name: "ttd"; tab: "text-to-diagram" | "mermaid" }
-    | { name: "commandPalette" }
-    | { name: "elementLinkSelector"; sourceElementId: ExcalidrawElement["id"] };
-
+    | { name: "commandPalette" };
   /**
    * Reflects user preference for whether the default sidebar should be docked.
    *
@@ -368,7 +343,6 @@ export interface AppState {
 
   lastPointerDownWith: PointerType;
   selectedElementIds: Readonly<{ [id: string]: true }>;
-  hoveredElementIds: Readonly<{ [id: string]: true }>;
   previousSelectedElementIds: { [id: string]: true };
   selectedElementsAreBeingDragged: boolean;
   shouldCacheIgnoreZoom: boolean;
@@ -422,11 +396,6 @@ export interface AppState {
   userToFollow: UserToFollow | null;
   /** the socket ids of the users following the current user */
   followedBy: Set<SocketId>;
-
-  /** image cropping */
-  isCropping: boolean;
-  croppingElementId: ExcalidrawElement["id"] | null;
-
   searchMatches: readonly SearchMatch[];
 }
 
@@ -532,22 +501,6 @@ export interface ExcalidrawProps {
     data: ClipboardData,
     event: ClipboardEvent | null,
   ) => Promise<boolean> | boolean;
-  /**
-   * Called when element(s) are duplicated so you can listen or modify as
-   * needed.
-   *
-   * Called when duplicating via mouse-drag, keyboard, paste, library insert
-   * etc.
-   *
-   * Returned elements will be used in place of the next elements
-   * (you should return all elements, including deleted, and not mutate
-   * the element if changes are made)
-   */
-  onDuplicate?: (
-    nextElements: readonly ExcalidrawElement[],
-    /** excludes the duplicated elements */
-    prevElements: readonly ExcalidrawElement[],
-  ) => ExcalidrawElement[] | void;
   renderTopRightUI?: (
     isMobile: boolean,
     appState: UIAppState,
@@ -571,7 +524,6 @@ export interface ExcalidrawProps {
   onLibraryChange?: (libraryItems: LibraryItems) => void | Promise<any>;
   autoFocus?: boolean;
   generateIdForFile?: (file: File) => string | Promise<string>;
-  generateLinkForSelection?: (id: string, type: "element" | "group") => string;
   onLinkOpen?: (
     element: NonDeletedExcalidrawElement,
     event: CustomEvent<{
@@ -601,15 +553,20 @@ export interface ExcalidrawProps {
   ) => JSX.Element | null;
   aiEnabled?: boolean;
   showDeprecatedFonts?: boolean;
-  renderScrollbars?: boolean;
 }
 
 export type SceneData = {
   elements?: ImportedDataState["elements"];
   appState?: ImportedDataState["appState"];
   collaborators?: Map<SocketId, Collaborator>;
-  captureUpdate?: CaptureUpdateActionType;
+  storeAction?: StoreActionType;
 };
+
+export enum UserIdleState {
+  ACTIVE = "active",
+  AWAY = "away",
+  IDLE = "idle",
+}
 
 export type ExportOpts = {
   saveFileToDisk?: boolean;
@@ -712,9 +669,6 @@ export type AppClassProperties = {
   getEditorUIOffsets: App["getEditorUIOffsets"];
   visibleElements: App["visibleElements"];
   excalidrawContainerValue: App["excalidrawContainerValue"];
-
-  onPointerUpEmitter: App["onPointerUpEmitter"];
-  updateEditorAtom: App["updateEditorAtom"];
 };
 
 export type PointerDownState = Readonly<{
@@ -726,8 +680,7 @@ export type PointerDownState = Readonly<{
   scrollbars: ReturnType<typeof isOverScrollBars>;
   // The previous pointer position
   lastCoords: { x: number; y: number };
-  // original element frozen snapshots so we can access the original
-  // element attribute values at time of pointerdown
+  // map of original elements data
   originalElements: Map<string, NonDeleted<ExcalidrawElement>>;
   resize: {
     // Handle when resizing, might change during the pointer interaction
@@ -761,9 +714,6 @@ export type PointerDownState = Readonly<{
     hasOccurred: boolean;
     // Might change during the pointer interaction
     offset: { x: number; y: number } | null;
-    // by default same as PointerDownState.origin. On alt-duplication, reset
-    // to current pointer position at time of duplication.
-    origin: { x: number; y: number };
   };
   // We need to have these in the state so that we can unsubscribe them
   eventListeners: {
@@ -785,7 +735,6 @@ export type UnsubscribeCallback = () => void;
 
 export interface ExcalidrawImperativeAPI {
   updateScene: InstanceType<typeof App>["updateScene"];
-  mutateElement: InstanceType<typeof App>["mutateElement"];
   updateLibrary: InstanceType<typeof Library>["updateLibrary"];
   resetScene: InstanceType<typeof App>["resetScene"];
   getSceneElementsIncludingDeleted: InstanceType<
@@ -800,6 +749,10 @@ export interface ExcalidrawImperativeAPI {
   getName: InstanceType<typeof App>["getName"];
   scrollToContent: InstanceType<typeof App>["scrollToContent"];
   registerAction: (action: Action) => void;
+  addSubtype: (
+    record: SubtypeRecord,
+    subtypePrepFn: SubtypePrepFn,
+  ) => { actions: readonly Action[] | null; methods: Partial<SubtypeMethods> };
   refresh: InstanceType<typeof App>["refresh"];
   setToast: InstanceType<typeof App>["setToast"];
   addFiles: (data: BinaryFileData[]) => void;

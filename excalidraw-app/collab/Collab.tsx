@@ -1,58 +1,31 @@
+import throttle from "lodash.throttle";
+import { PureComponent } from "react";
+import type {
+  ExcalidrawImperativeAPI,
+  SocketId,
+} from "../../packages/excalidraw/types";
+import { ErrorDialog } from "../../packages/excalidraw/components/ErrorDialog";
+import { APP_NAME, ENV, EVENT } from "../../packages/excalidraw/constants";
+import type { ImportedDataState } from "../../packages/excalidraw/data/types";
+import type {
+  ExcalidrawElement,
+  InitializedExcalidrawImageElement,
+  OrderedExcalidrawElement,
+} from "../../packages/excalidraw/element/types";
 import {
-  CaptureUpdateAction,
+  StoreAction,
   getSceneVersion,
   restoreElements,
   zoomToFitBounds,
   reconcileElements,
-} from "@excalidraw/excalidraw";
-import { ErrorDialog } from "@excalidraw/excalidraw/components/ErrorDialog";
-import { APP_NAME, EVENT } from "@excalidraw/common";
+} from "../../packages/excalidraw";
+import type { Collaborator, Gesture } from "../../packages/excalidraw/types";
 import {
-  IDLE_THRESHOLD,
-  ACTIVE_THRESHOLD,
-  UserIdleState,
   assertNever,
-  isDevEnv,
-  isTestEnv,
   preventUnload,
   resolvablePromise,
   throttleRAF,
-} from "@excalidraw/common";
-import { decryptData } from "@excalidraw/excalidraw/data/encryption";
-import { getVisibleSceneBounds } from "@excalidraw/element/bounds";
-import { newElementWith } from "@excalidraw/element/mutateElement";
-import {
-  isImageElement,
-  isInitializedImageElement,
-} from "@excalidraw/element/typeChecks";
-import { AbortError } from "@excalidraw/excalidraw/errors";
-import { t } from "@excalidraw/excalidraw/i18n";
-import { withBatchedUpdates } from "@excalidraw/excalidraw/reactUtils";
-
-import throttle from "lodash.throttle";
-import { PureComponent } from "react";
-
-import type {
-  ReconciledExcalidrawElement,
-  RemoteExcalidrawElement,
-} from "@excalidraw/excalidraw/data/reconcile";
-import type { ImportedDataState } from "@excalidraw/excalidraw/data/types";
-import type {
-  ExcalidrawElement,
-  FileId,
-  InitializedExcalidrawImageElement,
-  OrderedExcalidrawElement,
-} from "@excalidraw/element/types";
-import type {
-  BinaryFileData,
-  ExcalidrawImperativeAPI,
-  SocketId,
-  Collaborator,
-  Gesture,
-} from "@excalidraw/excalidraw/types";
-import type { Mutable, ValueOf } from "@excalidraw/common/utility-types";
-
-import { appJotaiStore, atom } from "../app-jotai";
+} from "../../packages/excalidraw/utils";
 import {
   CURSOR_SYNC_TIMEOUT,
   FILE_UPLOAD_MAX_BYTES,
@@ -63,17 +36,15 @@ import {
   SYNC_FULL_SCENE_INTERVAL_MS,
   WS_EVENTS,
 } from "../app_constants";
+import type {
+  SocketUpdateDataSource,
+  SyncableExcalidrawElement,
+} from "../data";
 import {
   generateCollaborationLinkData,
   getCollaborationLink,
   getSyncableElements,
 } from "../data";
-import {
-  encodeFilesForUpload,
-  FileManager,
-  updateStaleImageStatuses,
-} from "../data/FileManager";
-import { LocalData } from "../data/LocalData";
 import {
   isSavedToFirebase,
   loadFilesFromFirebase,
@@ -85,15 +56,37 @@ import {
   importUsernameFromLocalStorage,
   saveUsernameToLocalStorage,
 } from "../data/localStorage";
-import { resetBrowserStateVersions } from "../data/tabSync";
-
-import { collabErrorIndicatorAtom } from "./CollabError";
 import Portal from "./Portal";
-
+import { t } from "../../packages/excalidraw/i18n";
+import { UserIdleState } from "../../packages/excalidraw/types";
+import {
+  IDLE_THRESHOLD,
+  ACTIVE_THRESHOLD,
+} from "../../packages/excalidraw/constants";
+import {
+  encodeFilesForUpload,
+  FileManager,
+  updateStaleImageStatuses,
+} from "../data/FileManager";
+import { AbortError } from "../../packages/excalidraw/errors";
+import {
+  isImageElement,
+  isInitializedImageElement,
+} from "../../packages/excalidraw/element/typeChecks";
+import { newElementWith } from "../../packages/excalidraw/element/mutateElement";
+import { decryptData } from "../../packages/excalidraw/data/encryption";
+import { resetBrowserStateVersions } from "../data/tabSync";
+import { LocalData } from "../data/LocalData";
+import { atom } from "jotai";
+import { appJotaiStore } from "../app-jotai";
+import type { Mutable, ValueOf } from "../../packages/excalidraw/utility-types";
+import { getVisibleSceneBounds } from "../../packages/excalidraw/element/bounds";
+import { withBatchedUpdates } from "../../packages/excalidraw/reactUtils";
+import { collabErrorIndicatorAtom } from "./CollabError";
 import type {
-  SocketUpdateDataSource,
-  SyncableExcalidrawElement,
-} from "../data";
+  ReconciledExcalidrawElement,
+  RemoteExcalidrawElement,
+} from "../../packages/excalidraw/data/reconcile";
 
 export const collabAPIAtom = atom<CollabAPI | null>(null);
 export const isCollaboratingAtom = atom(false);
@@ -164,7 +157,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
           throw new AbortError();
         }
 
-        const { savedFiles, erroredFiles } = await saveFilesToFirebase({
+        return saveFilesToFirebase({
           prefix: `${FIREBASE_STORAGE_PREFIXES.collabFiles}/${roomId}`,
           files: await encodeFilesForUpload({
             files: addedFiles,
@@ -172,29 +165,6 @@ class Collab extends PureComponent<CollabProps, CollabState> {
             maxBytes: FILE_UPLOAD_MAX_BYTES,
           }),
         });
-
-        return {
-          savedFiles: savedFiles.reduce(
-            (acc: Map<FileId, BinaryFileData>, id) => {
-              const fileData = addedFiles.get(id);
-              if (fileData) {
-                acc.set(id, fileData);
-              }
-              return acc;
-            },
-            new Map(),
-          ),
-          erroredFiles: erroredFiles.reduce(
-            (acc: Map<FileId, BinaryFileData>, id) => {
-              const fileData = addedFiles.get(id);
-              if (fileData) {
-                acc.set(id, fileData);
-              }
-              return acc;
-            },
-            new Map(),
-          ),
-        };
       },
     });
     this.excalidrawAPI = props.excalidrawAPI;
@@ -241,7 +211,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
 
     appJotaiStore.set(collabAPIAtom, collabAPI);
 
-    if (isTestEnv() || isDevEnv()) {
+    if (import.meta.env.MODE === ENV.TEST || import.meta.env.DEV) {
       window.collab = window.collab || ({} as Window["collab"]);
       Object.defineProperties(window, {
         collab: {
@@ -301,13 +271,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
       //  the purpose is to run in immediately after user decides to stay
       this.saveCollabRoomToFirebase(syncableElements);
 
-      if (import.meta.env.VITE_APP_DISABLE_PREVENT_UNLOAD !== "true") {
-        preventUnload(event);
-      } else {
-        console.warn(
-          "preventing unload disabled (VITE_APP_DISABLE_PREVENT_UNLOAD)",
-        );
-      }
+      preventUnload(event);
     }
   });
 
@@ -395,7 +359,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
 
       this.excalidrawAPI.updateScene({
         elements,
-        captureUpdate: CaptureUpdateAction.NEVER,
+        storeAction: StoreAction.UPDATE,
       });
     }
   };
@@ -430,7 +394,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
       .filter((element) => {
         return (
           isInitializedImageElement(element) &&
-          !this.fileManager.isFileTracked(element.fileId) &&
+          !this.fileManager.isFileHandled(element.fileId) &&
           !element.isDeleted &&
           (opts.forceFetchFiles
             ? element.status !== "pending" ||
@@ -546,7 +510,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
       // to database even if deleted before creating the room.
       this.excalidrawAPI.updateScene({
         elements,
-        captureUpdate: CaptureUpdateAction.NEVER,
+        storeAction: StoreAction.UPDATE,
       });
 
       this.saveCollabRoomToFirebase(getSyncableElements(elements));
@@ -784,7 +748,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
   ) => {
     this.excalidrawAPI.updateScene({
       elements,
-      captureUpdate: CaptureUpdateAction.NEVER,
+      storeAction: StoreAction.UPDATE,
     });
 
     this.loadImageFiles();
@@ -1020,7 +984,7 @@ declare global {
   }
 }
 
-if (isTestEnv() || isDevEnv()) {
+if (import.meta.env.MODE === ENV.TEST || import.meta.env.DEV) {
   window.collab = window.collab || ({} as Window["collab"]);
 }
 

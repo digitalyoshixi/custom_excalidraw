@@ -1,35 +1,6 @@
-import { clamp, roundToStep } from "@excalidraw/math";
-
-import {
-  DEFAULT_CANVAS_BACKGROUND_PICKS,
-  CURSOR_TYPE,
-  MAX_ZOOM,
-  MIN_ZOOM,
-  THEME,
-  ZOOM_STEP,
-  getShortcutKey,
-  updateActiveTool,
-  CODES,
-  KEYS,
-} from "@excalidraw/common";
-
-import { getNonDeletedElements } from "@excalidraw/element";
-import { newElementWith } from "@excalidraw/element/mutateElement";
-import { getCommonBounds, type SceneBounds } from "@excalidraw/element/bounds";
-
-import type { ExcalidrawElement } from "@excalidraw/element/types";
-
-import {
-  getDefaultAppState,
-  isEraserActive,
-  isHandToolActive,
-} from "../appState";
 import { ColorPicker } from "../components/ColorPicker/ColorPicker";
-import { ToolButton } from "../components/ToolButton";
-import { Tooltip } from "../components/Tooltip";
 import {
   handIcon,
-  LassoIcon,
   MoonIcon,
   SunIcon,
   TrashIcon,
@@ -38,21 +9,41 @@ import {
   ZoomOutIcon,
   ZoomResetIcon,
 } from "../components/icons";
-import { setCursor } from "../cursor";
-
+import { ToolButton } from "../components/ToolButton";
+import {
+  CURSOR_TYPE,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  THEME,
+  ZOOM_STEP,
+} from "../constants";
+import { getCommonBounds, getNonDeletedElements } from "../element";
+import type { ExcalidrawElement } from "../element/types";
 import { t } from "../i18n";
+import { CODES, KEYS } from "../keys";
 import { getNormalizedZoom } from "../scene";
 import { centerScrollOn } from "../scene/scroll";
 import { getStateForZoom } from "../scene/zoom";
-import { CaptureUpdateAction } from "../store";
-
-import { register } from "./register";
-
 import type { AppState, Offsets } from "../types";
+import { getShortcutKey, updateActiveTool } from "../utils";
+import { register } from "./register";
+import { Tooltip } from "../components/Tooltip";
+import { newElementWith } from "../element/mutateElement";
+import {
+  getDefaultAppState,
+  isEraserActive,
+  isHandToolActive,
+} from "../appState";
+import { DEFAULT_CANVAS_BACKGROUND_PICKS } from "../colors";
+import type { SceneBounds } from "../element/bounds";
+import { setCursor } from "../cursor";
+import { StoreAction } from "../store";
+import { clamp, roundToStep } from "../../math";
 
 export const actionChangeViewBackgroundColor = register({
   name: "changeViewBackgroundColor",
   label: "labels.canvasBackground",
+  paletteName: "Change canvas background color",
   trackEvent: false,
   predicate: (elements, appState, props, app) => {
     return (
@@ -63,9 +54,9 @@ export const actionChangeViewBackgroundColor = register({
   perform: (_, appState, value) => {
     return {
       appState: { ...appState, ...value },
-      captureUpdate: !!value.viewBackgroundColor
-        ? CaptureUpdateAction.IMMEDIATELY
-        : CaptureUpdateAction.EVENTUALLY,
+      storeAction: !!value.viewBackgroundColor
+        ? StoreAction.CAPTURE
+        : StoreAction.NONE,
     };
   },
   PanelComponent: ({ elements, appState, updateData, appProps }) => {
@@ -90,13 +81,13 @@ export const actionChangeViewBackgroundColor = register({
 export const actionClearCanvas = register({
   name: "clearCanvas",
   label: "labels.clearCanvas",
+  paletteName: "Clear canvas",
   icon: TrashIcon,
   trackEvent: { category: "canvas" },
   predicate: (elements, appState, props, app) => {
     return (
       !!app.props.UIOptions.canvasActions.clearCanvas &&
-      !appState.viewModeEnabled &&
-      appState.openDialog?.name !== "elementLinkSelector"
+      !appState.viewModeEnabled
     );
   },
   perform: (elements, appState, _, app) => {
@@ -123,7 +114,7 @@ export const actionClearCanvas = register({
             ? { ...appState.activeTool, type: "selection" }
             : appState.activeTool,
       },
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
 });
@@ -148,7 +139,7 @@ export const actionZoomIn = register({
         ),
         userToFollow: null,
       },
-      captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      storeAction: StoreAction.NONE,
     };
   },
   PanelComponent: ({ updateData, appState }) => (
@@ -189,7 +180,7 @@ export const actionZoomOut = register({
         ),
         userToFollow: null,
       },
-      captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      storeAction: StoreAction.NONE,
     };
   },
   PanelComponent: ({ updateData, appState }) => (
@@ -230,7 +221,7 @@ export const actionResetZoom = register({
         ),
         userToFollow: null,
       },
-      captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      storeAction: StoreAction.NONE,
     };
   },
   PanelComponent: ({ updateData, appState }) => (
@@ -349,7 +340,7 @@ export const zoomToFitBounds = ({
       scrollY: centerScroll.scrollY,
       zoom: { value: newZoomValue },
     },
-    captureUpdate: CaptureUpdateAction.EVENTUALLY,
+    storeAction: StoreAction.NONE,
   };
 };
 
@@ -480,7 +471,7 @@ export const actionToggleTheme = register({
         theme:
           value || (appState.theme === THEME.LIGHT ? THEME.DARK : THEME.LIGHT),
       },
-      captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      storeAction: StoreAction.NONE,
     };
   },
   keyTest: (event) => event.altKey && event.shiftKey && event.code === CODES.D,
@@ -518,48 +509,16 @@ export const actionToggleEraserTool = register({
         activeEmbeddable: null,
         activeTool,
       },
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   keyTest: (event) => event.key === KEYS.E,
 });
 
-export const actionToggleLassoTool = register({
-  name: "toggleLassoTool",
-  label: "toolBar.lasso",
-  icon: LassoIcon,
-  trackEvent: { category: "toolbar" },
-  perform: (elements, appState, _, app) => {
-    let activeTool: AppState["activeTool"];
-
-    if (appState.activeTool.type !== "lasso") {
-      activeTool = updateActiveTool(appState, {
-        type: "lasso",
-        fromSelection: false,
-      });
-      setCursor(app.interactiveCanvas, CURSOR_TYPE.CROSSHAIR);
-    } else {
-      activeTool = updateActiveTool(appState, {
-        type: "selection",
-      });
-    }
-
-    return {
-      appState: {
-        ...appState,
-        selectedElementIds: {},
-        selectedGroupIds: {},
-        activeEmbeddable: null,
-        activeTool,
-      },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    };
-  },
-});
-
 export const actionToggleHandTool = register({
   name: "toggleHandTool",
   label: "toolBar.hand",
+  paletteName: "Toggle hand tool",
   trackEvent: { category: "toolbar" },
   icon: handIcon,
   viewMode: false,
@@ -589,7 +548,7 @@ export const actionToggleHandTool = register({
         activeEmbeddable: null,
         activeTool,
       },
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   keyTest: (event) =>

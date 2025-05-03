@@ -1,45 +1,41 @@
 import {
   compressData,
   decompressData,
-} from "@excalidraw/excalidraw/data/encode";
+} from "../../packages/excalidraw/data/encode";
 import {
   decryptData,
   generateEncryptionKey,
   IV_LENGTH_BYTES,
-} from "@excalidraw/excalidraw/data/encryption";
-import { serializeAsJSON } from "@excalidraw/excalidraw/data/json";
-import { restore } from "@excalidraw/excalidraw/data/restore";
-import { isInvisiblySmallElement } from "@excalidraw/element/sizeHelpers";
-import { isInitializedImageElement } from "@excalidraw/element/typeChecks";
-import { t } from "@excalidraw/excalidraw/i18n";
-import { bytesToHexString } from "@excalidraw/common";
-
-import type { UserIdleState } from "@excalidraw/common";
-import type { ImportedDataState } from "@excalidraw/excalidraw/data/types";
-import type { SceneBounds } from "@excalidraw/element/bounds";
+} from "../../packages/excalidraw/data/encryption";
+import { serializeAsJSON } from "../../packages/excalidraw/data/json";
+import { restore } from "../../packages/excalidraw/data/restore";
+import type { ImportedDataState } from "../../packages/excalidraw/data/types";
+import type { SceneBounds } from "../../packages/excalidraw/element/bounds";
+import { isInvisiblySmallElement } from "../../packages/excalidraw/element/sizeHelpers";
+import { isInitializedImageElement } from "../../packages/excalidraw/element/typeChecks";
 import type {
   ExcalidrawElement,
   FileId,
   OrderedExcalidrawElement,
-} from "@excalidraw/element/types";
+} from "../../packages/excalidraw/element/types";
+import { t } from "../../packages/excalidraw/i18n";
 import type {
   AppState,
   BinaryFileData,
   BinaryFiles,
   SocketId,
-} from "@excalidraw/excalidraw/types";
-import type { MakeBrand } from "@excalidraw/common/utility-types";
-
+  UserIdleState,
+} from "../../packages/excalidraw/types";
+import type { MakeBrand } from "../../packages/excalidraw/utility-types";
+import { bytesToHexString } from "../../packages/excalidraw/utils";
+import type { WS_SUBTYPES } from "../app_constants";
 import {
   DELETED_ELEMENT_TIMEOUT,
   FILE_UPLOAD_MAX_BYTES,
   ROOM_ID_BYTES,
 } from "../app_constants";
-
 import { encodeFilesForUpload } from "./FileManager";
 import { saveFilesToFirebase } from "./firebase";
-
-import type { WS_SUBTYPES } from "../app_constants";
 
 export type SyncableExcalidrawElement = OrderedExcalidrawElement &
   MakeBrand<"SyncableExcalidrawElement">;

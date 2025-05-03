@@ -1,23 +1,21 @@
 import React from "react";
-import { vi } from "vitest";
-
-import { KEYS, reseed } from "@excalidraw/common";
-
-import type { ExcalidrawLinearElement } from "@excalidraw/element/types";
-
+import ReactDOM from "react-dom";
 import { Excalidraw } from "../index";
-import * as InteractiveScene from "../renderer/interactiveScene";
 import * as StaticScene from "../renderer/staticScene";
-
+import * as InteractiveScene from "../renderer/interactiveScene";
+import { KEYS } from "../keys";
 import {
   render,
   fireEvent,
   mockBoundingClientRect,
   restoreOriginalGetBoundingClientRect,
-  unmountComponent,
 } from "./test-utils";
+import type { ExcalidrawLinearElement } from "../element/types";
+import { reseed } from "../random";
+import { vi } from "vitest";
 
-unmountComponent();
+// Unmount ReactDOM from root
+ReactDOM.unmountComponentAtNode(document.getElementById("root")!);
 
 const renderInteractiveScene = vi.spyOn(
   InteractiveScene,
@@ -313,7 +311,7 @@ describe("Test dragCreate", () => {
       expect(renderInteractiveScene.mock.calls.length).toMatchInlineSnapshot(
         `6`,
       );
-      expect(renderStaticScene.mock.calls.length).toMatchInlineSnapshot(`5`);
+      expect(renderStaticScene.mock.calls.length).toMatchInlineSnapshot(`6`);
       expect(h.state.selectionElement).toBeNull();
       expect(h.elements.length).toEqual(0);
     });
@@ -342,7 +340,7 @@ describe("Test dragCreate", () => {
       expect(renderInteractiveScene.mock.calls.length).toMatchInlineSnapshot(
         `6`,
       );
-      expect(renderStaticScene.mock.calls.length).toMatchInlineSnapshot(`5`);
+      expect(renderStaticScene.mock.calls.length).toMatchInlineSnapshot(`6`);
       expect(h.state.selectionElement).toBeNull();
       expect(h.elements.length).toEqual(0);
     });

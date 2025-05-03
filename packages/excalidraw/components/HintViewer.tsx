@@ -1,24 +1,19 @@
-import { CANVAS_SEARCH_TAB, DEFAULT_SIDEBAR } from "@excalidraw/common";
-
+import { t } from "../i18n";
+import type { AppClassProperties, Device, UIAppState } from "../types";
 import {
   isFlowchartNodeElement,
   isImageElement,
   isLinearElement,
   isTextBindableContainer,
   isTextElement,
-} from "@excalidraw/element/typeChecks";
-
-import { getShortcutKey } from "@excalidraw/common";
-
-import { isNodeInFlowchart } from "@excalidraw/element/flowchart";
-
-import { t } from "../i18n";
+} from "../element/typeChecks";
+import { getShortcutKey } from "../utils";
 import { isEraserActive } from "../appState";
-import { isGridModeEnabled } from "../snapping";
 
 import "./HintViewer.scss";
-
-import type { AppClassProperties, Device, UIAppState } from "../types";
+import { isNodeInFlowchart } from "../element/flowchart";
+import { isGridModeEnabled } from "../snapping";
+import { CANVAS_SEARCH_TAB, DEFAULT_SIDEBAR } from "../constants";
 
 interface HintViewerProps {
   appState: UIAppState;
@@ -105,14 +100,6 @@ const getHints = ({
     return t("hints.text_editing");
   }
 
-  if (appState.croppingElementId) {
-    return t("hints.leaveCropEditor");
-  }
-
-  if (selectedElements.length === 1 && isImageElement(selectedElements[0])) {
-    return t("hints.enterCropEditor");
-  }
-
   if (activeTool.type === "selection") {
     if (
       appState.selectionElement &&
@@ -120,7 +107,7 @@ const getHints = ({
       !appState.editingTextElement &&
       !appState.editingLinearElement
     ) {
-      return [t("hints.deepBoxSelect")];
+      return t("hints.deepBoxSelect");
     }
 
     if (isGridModeEnabled(app) && appState.selectedElementsAreBeingDragged) {
@@ -128,7 +115,7 @@ const getHints = ({
     }
 
     if (!selectedElements.length && !isMobile) {
-      return [t("hints.canvasPanning")];
+      return t("hints.canvasPanning");
     }
 
     if (selectedElements.length === 1) {

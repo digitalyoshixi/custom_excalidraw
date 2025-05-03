@@ -1,8 +1,6 @@
-import { useI18n, languages } from "@excalidraw/excalidraw/i18n";
+import { useSetAtom } from "jotai";
 import React from "react";
-
-import { useSetAtom } from "../app-jotai";
-
+import { useI18n, languages } from "../../packages/excalidraw/i18n";
 import { appLangCodeAtom } from "./language-state";
 
 export const LanguageList = ({ style }: { style?: React.CSSProperties }) => {

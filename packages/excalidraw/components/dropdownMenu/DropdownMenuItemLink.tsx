@@ -1,12 +1,9 @@
-import React from "react";
-
 import MenuItemContent from "./DropdownMenuItemContent";
+import React from "react";
 import {
   getDropdownMenuItemClassName,
   useHandleDropdownMenuItemClick,
 } from "./common";
-
-import type { JSX } from "react";
 
 const DropdownMenuItemLink = ({
   icon,
@@ -16,7 +13,7 @@ const DropdownMenuItemLink = ({
   onSelect,
   className = "",
   selected,
-  rel = "noopener",
+  rel = "noreferrer",
   ...rest
 }: {
   href: string;
@@ -31,12 +28,11 @@ const DropdownMenuItemLink = ({
   const handleClick = useHandleDropdownMenuItemClick(rest.onClick, onSelect);
 
   return (
-    // eslint-disable-next-line react/jsx-no-target-blank
     <a
       {...rest}
       href={href}
       target="_blank"
-      rel={rel || "noopener"}
+      rel="noreferrer"
       className={getDropdownMenuItemClassName(className, selected)}
       title={rest.title ?? rest["aria-label"]}
       onClick={handleClick}

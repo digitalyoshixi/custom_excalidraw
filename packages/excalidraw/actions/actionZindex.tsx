@@ -1,22 +1,21 @@
-import { KEYS, CODES, getShortcutKey, isDarwin } from "@excalidraw/common";
-
 import {
   moveOneLeft,
   moveOneRight,
   moveAllLeft,
   moveAllRight,
-} from "@excalidraw/element/zindex";
-
+} from "../zindex";
+import { KEYS, CODES } from "../keys";
+import { t } from "../i18n";
+import { getShortcutKey } from "../utils";
+import { register } from "./register";
 import {
   BringForwardIcon,
   BringToFrontIcon,
   SendBackwardIcon,
   SendToBackIcon,
 } from "../components/icons";
-import { t } from "../i18n";
-import { CaptureUpdateAction } from "../store";
-
-import { register } from "./register";
+import { isDarwin } from "../constants";
+import { StoreAction } from "../store";
 
 export const actionSendBackward = register({
   name: "sendBackward",
@@ -24,11 +23,11 @@ export const actionSendBackward = register({
   keywords: ["move down", "zindex", "layer"],
   icon: SendBackwardIcon,
   trackEvent: { category: "element" },
-  perform: (elements, appState, value, app) => {
+  perform: (elements, appState) => {
     return {
-      elements: moveOneLeft(elements, appState, app.scene),
+      elements: moveOneLeft(elements, appState),
       appState,
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   keyPriority: 40,
@@ -54,11 +53,11 @@ export const actionBringForward = register({
   keywords: ["move up", "zindex", "layer"],
   icon: BringForwardIcon,
   trackEvent: { category: "element" },
-  perform: (elements, appState, value, app) => {
+  perform: (elements, appState) => {
     return {
-      elements: moveOneRight(elements, appState, app.scene),
+      elements: moveOneRight(elements, appState),
       appState,
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   keyPriority: 40,
@@ -88,7 +87,7 @@ export const actionSendToBack = register({
     return {
       elements: moveAllLeft(elements, appState),
       appState,
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   keyTest: (event) =>
@@ -126,7 +125,7 @@ export const actionBringToFront = register({
     return {
       elements: moveAllRight(elements, appState),
       appState,
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   keyTest: (event) =>

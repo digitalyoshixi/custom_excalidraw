@@ -6,13 +6,12 @@
 // Note: when adding new icons, review https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/RTL_Guidelines
 // to determine whether or not the icons should be mirrored in right-to-left languages.
 
-import clsx from "clsx";
-import oc from "open-color";
 import React from "react";
 
-import { THEME } from "@excalidraw/common";
-
-import type { Theme } from "@excalidraw/element/types";
+import oc from "open-color";
+import clsx from "clsx";
+import type { Theme } from "../element/types";
+import { THEME } from "../constants";
 
 export const iconFillColor = (theme: Theme) => "var(--icon-fill-color)";
 
@@ -274,21 +273,6 @@ export const SelectionIcon = createIcon(
   { fill: "none", width: 22, height: 22, strokeWidth: 1.25 },
 );
 
-export const LassoIcon = createIcon(
-  <g
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={1.5}
-  >
-    <path d="M4.028 13.252c-.657 -.972 -1.028 -2.078 -1.028 -3.252c0 -3.866 4.03 -7 9 -7s9 3.134 9 7s-4.03 7 -9 7c-1.913 0 -3.686 -.464 -5.144 -1.255" />
-    <path d="M5 15m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-    <path d="M5 17c0 1.42 .316 2.805 1 4" />
-  </g>,
-
-  { fill: "none", width: 22, height: 22, strokeWidth: 1.25 },
-);
-
 // tabler-icons: square
 export const RectangleIcon = createIcon(
   <g strokeWidth="1.5">
@@ -421,7 +405,7 @@ export const TrashIcon = createIcon(
 );
 
 export const EmbedIcon = createIcon(
-  <g strokeWidth="1.5">
+  <g strokeWidth="1.25">
     <polyline points="12 16 18 10 12 4" />
     <polyline points="8 4 2 10 8 16" />
   </g>,
@@ -1232,12 +1216,11 @@ export const EdgeRoundIcon = createIcon(
 );
 
 export const ArrowheadNoneIcon = createIcon(
-  <g stroke="currentColor" opacity={0.3} strokeWidth={2}>
-    <path d="M12 12l9 0" />
-    <path d="M3 9l6 6" />
-    <path d="M3 15l6 -6" />
-  </g>,
-  tablerIconProps,
+  <path d="M6 10H34" stroke="currentColor" strokeWidth={2} fill="none" />,
+  {
+    width: 40,
+    height: 20,
+  },
 );
 
 export const ArrowheadArrowIcon = React.memo(
@@ -1364,54 +1347,6 @@ export const ArrowheadDiamondOutlineIcon = React.memo(
       >
         <path d="M6,9.5H20" />
         <path d="M27,5L34,10L27,14L20,9.5Z" />
-      </g>,
-      { width: 40, height: 20 },
-    ),
-);
-
-export const ArrowheadCrowfootIcon = React.memo(
-  ({ flip = false }: { flip?: boolean }) =>
-    createIcon(
-      <g
-        stroke="currentColor"
-        fill="none"
-        transform={flip ? "" : "translate(40, 0) scale(-1, 1)"}
-        strokeLinejoin="round"
-        strokeWidth={2}
-      >
-        <path d="M34,10 H6 M15,10 L7,5 M15,10 L7,15" />
-      </g>,
-      { width: 40, height: 20 },
-    ),
-);
-
-export const ArrowheadCrowfootOneIcon = React.memo(
-  ({ flip = false }: { flip?: boolean }) =>
-    createIcon(
-      <g
-        stroke="currentColor"
-        fill="none"
-        transform={flip ? "" : "translate(40, 0) scale(-1, 1)"}
-        strokeLinejoin="round"
-        strokeWidth={2}
-      >
-        <path d="M34,10 H6 M15,10 L15,15 L15,5" />
-      </g>,
-      { width: 40, height: 20 },
-    ),
-);
-
-export const ArrowheadCrowfootOneOrManyIcon = React.memo(
-  ({ flip = false }: { flip?: boolean }) =>
-    createIcon(
-      <g
-        stroke="currentColor"
-        fill="none"
-        transform={flip ? "" : "translate(40, 0) scale(-1, 1)"}
-        strokeLinejoin="round"
-        strokeWidth={2}
-      >
-        <path d="M34,10 H6 M15,10 L15,16 L15,4 M15,10 L7,5 M15,10 L7,15" />
       </g>,
       { width: 40, height: 20 },
     ),
@@ -2209,30 +2144,6 @@ export const upIcon = createIcon(
   <g>
     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
     <path d="M6 15l6 -6l6 6" />
-  </g>,
-  tablerIconProps,
-);
-
-export const cropIcon = createIcon(
-  <g strokeWidth="1.25">
-    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-    <path d="M8 5v10a1 1 0 0 0 1 1h10" />
-    <path d="M5 8h10a1 1 0 0 1 1 1v10" />
-  </g>,
-  tablerIconProps,
-);
-
-export const elementLinkIcon = createIcon(
-  <g>
-    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-    <path d="M5 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-    <path d="M19 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-    <path d="M5 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-    <path d="M19 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-    <path d="M5 7l0 10" />
-    <path d="M7 5l10 0" />
-    <path d="M7 19l10 0" />
-    <path d="M19 7l0 10" />
   </g>,
   tablerIconProps,
 );

@@ -1,4 +1,4 @@
-import clsx from "clsx";
+import type { KeyboardEvent } from "react";
 import {
   forwardRef,
   useRef,
@@ -6,13 +6,11 @@ import {
   useLayoutEffect,
   useState,
 } from "react";
-
-import { Button } from "./Button";
-import { eyeIcon, eyeClosedIcon } from "./icons";
+import clsx from "clsx";
 
 import "./TextField.scss";
-
-import type { KeyboardEvent } from "react";
+import { Button } from "./Button";
+import { eyeIcon, eyeClosedIcon } from "./icons";
 
 type TextFieldProps = {
   onChange?: (value: string) => void;

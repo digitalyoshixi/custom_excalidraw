@@ -13,7 +13,7 @@ const ErrorComp = ({ error }: { error: string }) => {
 
 interface TTDDialogOutputProps {
   error: Error | null;
-  canvasRef: React.RefObject<HTMLDivElement | null>;
+  canvasRef: React.RefObject<HTMLDivElement>;
   loaded: boolean;
 }
 

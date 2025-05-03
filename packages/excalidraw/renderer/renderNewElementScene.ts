@@ -1,10 +1,7 @@
-import { throttleRAF } from "@excalidraw/common";
-
-import { renderElement } from "@excalidraw/element/renderElement";
-
-import { bootstrapCanvas, getNormalizedCanvasDimensions } from "./helpers";
-
 import type { NewElementSceneRenderConfig } from "../scene/types";
+import { throttleRAF } from "../utils";
+import { bootstrapCanvas, getNormalizedCanvasDimensions } from "./helpers";
+import { renderElement } from "./renderElement";
 
 const _renderNewElementScene = ({
   canvas,

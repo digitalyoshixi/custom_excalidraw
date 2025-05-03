@@ -1,22 +1,22 @@
 import React, { useEffect } from "react";
-
-import { DEFAULT_UI_OPTIONS, isShallowEqual } from "@excalidraw/common";
-
-import App from "./components/App";
 import { InitializeApp } from "./components/InitializeApp";
-import Footer from "./components/footer/FooterCenter";
-import LiveCollaborationTrigger from "./components/live-collaboration/LiveCollaborationTrigger";
-import MainMenu from "./components/main-menu/MainMenu";
-import WelcomeScreen from "./components/welcome-screen/WelcomeScreen";
-import { defaultLang } from "./i18n";
-import { EditorJotaiProvider, editorJotaiStore } from "./editor-jotai";
-import polyfill from "./polyfill";
+import App from "./components/App";
+import { isShallowEqual } from "./utils";
 
 import "./css/app.scss";
 import "./css/styles.scss";
-import "./fonts/fonts.css";
+import "./fonts/assets/fonts.css";
+import polyfill from "./polyfill";
 
 import type { AppProps, ExcalidrawProps } from "./types";
+import { defaultLang } from "./i18n";
+import { DEFAULT_UI_OPTIONS } from "./constants";
+import { Provider } from "jotai";
+import { jotaiScope, jotaiStore } from "./jotai";
+import Footer from "./components/footer/FooterCenter";
+import MainMenu from "./components/main-menu/MainMenu";
+import WelcomeScreen from "./components/welcome-screen/WelcomeScreen";
+import LiveCollaborationTrigger from "./components/live-collaboration/LiveCollaborationTrigger";
 
 polyfill();
 
@@ -43,17 +43,14 @@ const ExcalidrawBase = (props: ExcalidrawProps) => {
     autoFocus = false,
     generateIdForFile,
     onLinkOpen,
-    generateLinkForSelection,
     onPointerDown,
     onPointerUp,
     onScrollChange,
-    onDuplicate,
     children,
     validateEmbeddable,
     renderEmbeddable,
     aiEnabled,
     showDeprecatedFonts,
-    renderScrollbars,
   } = props;
 
   const canvasActions = props.UIOptions?.canvasActions;
@@ -110,7 +107,7 @@ const ExcalidrawBase = (props: ExcalidrawProps) => {
   }, []);
 
   return (
-    <EditorJotaiProvider store={editorJotaiStore}>
+    <Provider unstable_createStore={() => jotaiStore} scope={jotaiScope}>
       <InitializeApp langCode={langCode} theme={theme}>
         <App
           onChange={onChange}
@@ -135,21 +132,18 @@ const ExcalidrawBase = (props: ExcalidrawProps) => {
           autoFocus={autoFocus}
           generateIdForFile={generateIdForFile}
           onLinkOpen={onLinkOpen}
-          generateLinkForSelection={generateLinkForSelection}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
           onScrollChange={onScrollChange}
-          onDuplicate={onDuplicate}
           validateEmbeddable={validateEmbeddable}
           renderEmbeddable={renderEmbeddable}
           aiEnabled={aiEnabled !== false}
           showDeprecatedFonts={showDeprecatedFonts}
-          renderScrollbars={renderScrollbars}
         >
           {children}
         </App>
       </InitializeApp>
-    </EditorJotaiProvider>
+    </Provider>
   );
 };
 
@@ -217,12 +211,10 @@ export {
   getSceneVersion,
   hashElementsVersion,
   hashString,
+  isInvisiblySmallElement,
   getNonDeletedElements,
-} from "@excalidraw/element";
-
-export { getTextFromElements } from "@excalidraw/element/textElement";
-export { isInvisiblySmallElement } from "@excalidraw/element/sizeHelpers";
-
+  getTextFromElements,
+} from "./element";
 export { defaultLang, useI18n, languages } from "./i18n";
 export {
   restore,
@@ -238,7 +230,7 @@ export {
   exportToBlob,
   exportToSvg,
   exportToClipboard,
-} from "@excalidraw/utils/export";
+} from "../utils/export";
 
 export { serializeAsJSON, serializeLibraryAsJSON } from "./data/json";
 export {
@@ -246,9 +238,9 @@ export {
   loadSceneOrLibraryFromBlob,
   loadLibraryFromBlob,
 } from "./data/blob";
-export { getFreeDrawSvgPath } from "@excalidraw/element/renderElement";
+export { getFreeDrawSvgPath } from "./renderer/renderElement";
 export { mergeLibraryItems, getLibraryItemsHash } from "./data/library";
-export { isLinearElement } from "@excalidraw/element/typeChecks";
+export { isLinearElement } from "./element/typeChecks";
 
 export {
   FONT_FAMILY,
@@ -256,24 +248,22 @@ export {
   MIME_TYPES,
   ROUNDNESS,
   DEFAULT_LASER_COLOR,
-  UserIdleState,
-  normalizeLink,
-} from "@excalidraw/common";
+} from "./constants";
 
 export {
   mutateElement,
   newElementWith,
   bumpVersion,
-} from "@excalidraw/element/mutateElement";
+} from "./element/mutateElement";
 
-export { CaptureUpdateAction } from "./store";
+export { StoreAction } from "./store";
 
 export { parseLibraryTokensFromUrl, useHandleLibrary } from "./data/library";
 
 export {
   sceneCoordsToViewportCoords,
   viewportCoordsToSceneCoords,
-} from "@excalidraw/common";
+} from "./utils";
 
 export { Sidebar } from "./components/Sidebar/Sidebar";
 export { Button } from "./components/Button";
@@ -288,21 +278,16 @@ export { DefaultSidebar } from "./components/DefaultSidebar";
 export { TTDDialog } from "./components/TTDDialog/TTDDialog";
 export { TTDDialogTrigger } from "./components/TTDDialog/TTDDialogTrigger";
 
+export { normalizeLink } from "./data/url";
 export { zoomToFitBounds } from "./actions/actionCanvas";
 export { convertToExcalidrawElements } from "./data/transform";
-export {
-  getCommonBounds,
-  getVisibleSceneBounds,
-} from "@excalidraw/element/bounds";
+export { getCommonBounds, getVisibleSceneBounds } from "./element/bounds";
 
 export {
   elementsOverlappingBBox,
   isElementInsideBBox,
   elementPartiallyOverlapsWithOrContainsBBox,
-} from "@excalidraw/utils/withinBounds";
+} from "../utils/withinBounds";
 
 export { DiagramToCodePlugin } from "./components/DiagramToCodePlugin/DiagramToCodePlugin";
 export { getDataURL } from "./data/blob";
-export { isElementLink } from "@excalidraw/element/elementLink";
-
-export { setCustomTextMetricsProvider } from "@excalidraw/element/textMeasurements";

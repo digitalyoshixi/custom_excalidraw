@@ -1,23 +1,16 @@
-import { degreesToRadians, radiansToDegrees } from "@excalidraw/math";
-
-import { getBoundTextElement } from "@excalidraw/element/textElement";
-import { isArrowElement } from "@excalidraw/element/typeChecks";
-
-import { isInGroup } from "@excalidraw/element/groups";
-
-import type { Degrees } from "@excalidraw/math";
-
-import type { ExcalidrawElement } from "@excalidraw/element/types";
-
-import type Scene from "@excalidraw/element/Scene";
-
+import { mutateElement } from "../../element/mutateElement";
+import { getBoundTextElement } from "../../element/textElement";
+import { isArrowElement } from "../../element/typeChecks";
+import type { ExcalidrawElement } from "../../element/types";
+import { isInGroup } from "../../groups";
+import type Scene from "../../scene/Scene";
 import { angleIcon } from "../icons";
-
 import DragInput from "./DragInput";
-import { getStepSizedValue, isPropertyEditable } from "./utils";
-
 import type { DragInputCallbackType } from "./DragInput";
+import { getStepSizedValue, isPropertyEditable } from "./utils";
 import type { AppState } from "../../types";
+import type { Degrees } from "../../../math";
+import { degreesToRadians, radiansToDegrees } from "../../../math";
 
 interface MultiAngleProps {
   elements: readonly ExcalidrawElement[];
@@ -53,13 +46,17 @@ const handleDegreeChange: DragInputCallbackType<
       if (!element) {
         continue;
       }
-      scene.mutateElement(element, {
-        angle: nextAngle,
-      });
+      mutateElement(
+        element,
+        {
+          angle: nextAngle,
+        },
+        false,
+      );
 
       const boundTextElement = getBoundTextElement(element, elementsMap);
       if (boundTextElement && !isArrowElement(element)) {
-        scene.mutateElement(boundTextElement, { angle: nextAngle });
+        mutateElement(boundTextElement, { angle: nextAngle }, false);
       }
     }
 
@@ -87,13 +84,17 @@ const handleDegreeChange: DragInputCallbackType<
 
     const nextAngle = degreesToRadians(nextAngleInDegrees as Degrees);
 
-    scene.mutateElement(latestElement, {
-      angle: nextAngle,
-    });
+    mutateElement(
+      latestElement,
+      {
+        angle: nextAngle,
+      },
+      false,
+    );
 
     const boundTextElement = getBoundTextElement(latestElement, elementsMap);
     if (boundTextElement && !isArrowElement(latestElement)) {
-      scene.mutateElement(boundTextElement, { angle: nextAngle });
+      mutateElement(boundTextElement, { angle: nextAngle }, false);
     }
   }
   scene.triggerUpdate();

@@ -1,20 +1,15 @@
 import clsx from "clsx";
-import React from "react";
-
-import { getShortcutFromShortcutName } from "../actions/shortcuts";
+import { Popover } from "./Popover";
+import type { TranslationKeys } from "../i18n";
 import { t } from "../i18n";
 
-import { useExcalidrawAppState, useExcalidrawElements } from "./App";
-
-import { Popover } from "./Popover";
-
 import "./ContextMenu.scss";
-
-import type { ActionManager } from "../actions/manager";
 import type { ShortcutName } from "../actions/shortcuts";
+import { getShortcutFromShortcutName } from "../actions/shortcuts";
 import type { Action } from "../actions/types";
-
-import type { TranslationKeys } from "../i18n";
+import type { ActionManager } from "../actions/manager";
+import { useExcalidrawAppState, useExcalidrawElements } from "./App";
+import React from "react";
 
 export type ContextMenuItem = typeof CONTEXT_MENU_SEPARATOR | Action;
 

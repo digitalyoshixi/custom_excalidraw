@@ -3,52 +3,38 @@ import {
   ROUNDNESS,
   TEXT_ALIGN,
   VERTICAL_ALIGN,
-  arrayToMap,
-  getFontString,
-} from "@excalidraw/common";
-import {
-  getOriginalContainerHeightFromCache,
-  resetOriginalContainerCache,
-  updateOriginalContainerCache,
-} from "@excalidraw/element/containerCache";
-
+} from "../constants";
+import { isTextElement, newElement } from "../element";
+import { mutateElement } from "../element/mutateElement";
 import {
   computeBoundTextPosition,
   computeContainerDimensionForBoundText,
   getBoundTextElement,
+  measureTextElement,
   redrawTextBoundingBox,
-} from "@excalidraw/element/textElement";
-
+} from "../element/textElement";
+import {
+  getOriginalContainerHeightFromCache,
+  resetOriginalContainerCache,
+  updateOriginalContainerCache,
+} from "../element/containerCache";
 import {
   hasBoundTextElement,
-  isArrowElement,
   isTextBindableContainer,
-  isTextElement,
   isUsingAdaptiveRadius,
-} from "@excalidraw/element/typeChecks";
-
-import { measureText } from "@excalidraw/element/textMeasurements";
-
-import { syncMovedIndices } from "@excalidraw/element/fractionalIndex";
-
-import { newElement } from "@excalidraw/element/newElement";
-
+} from "../element/typeChecks";
 import type {
   ExcalidrawElement,
   ExcalidrawLinearElement,
   ExcalidrawTextContainer,
   ExcalidrawTextElement,
-} from "@excalidraw/element/types";
-
-import type { Mutable } from "@excalidraw/common/utility-types";
-
-import type { Radians } from "@excalidraw/math";
-
-import { CaptureUpdateAction } from "../store";
-
-import { register } from "./register";
-
+} from "../element/types";
 import type { AppState } from "../types";
+import type { Mutable } from "../utility-types";
+import { arrayToMap } from "../utils";
+import { register } from "./register";
+import { syncMovedIndices } from "../fractionalIndex";
+import { StoreAction } from "../store";
 
 export const actionUnbindText = register({
   name: "unbindText",
@@ -65,11 +51,9 @@ export const actionUnbindText = register({
     selectedElements.forEach((element) => {
       const boundTextElement = getBoundTextElement(element, elementsMap);
       if (boundTextElement) {
-        const { width, height } = measureText(
-          boundTextElement.originalText,
-          getFontString(boundTextElement),
-          boundTextElement.lineHeight,
-        );
+        const { width, height } = measureTextElement(boundTextElement, {
+          text: boundTextElement.originalText,
+        });
         const originalContainerHeight = getOriginalContainerHeightFromCache(
           element.id,
         );
@@ -79,7 +63,7 @@ export const actionUnbindText = register({
           boundTextElement,
           elementsMap,
         );
-        app.scene.mutateElement(boundTextElement as ExcalidrawTextElement, {
+        mutateElement(boundTextElement as ExcalidrawTextElement, {
           containerId: null,
           width,
           height,
@@ -87,7 +71,7 @@ export const actionUnbindText = register({
           x,
           y,
         });
-        app.scene.mutateElement(element, {
+        mutateElement(element, {
           boundElements: element.boundElements?.filter(
             (ele) => ele.id !== boundTextElement.id,
           ),
@@ -100,7 +84,7 @@ export const actionUnbindText = register({
     return {
       elements,
       appState,
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
 });
@@ -152,21 +136,24 @@ export const actionBindText = register({
       textElement = selectedElements[1] as ExcalidrawTextElement;
       container = selectedElements[0] as ExcalidrawTextContainer;
     }
-    app.scene.mutateElement(textElement, {
+    mutateElement(textElement, {
       containerId: container.id,
       verticalAlign: VERTICAL_ALIGN.MIDDLE,
       textAlign: TEXT_ALIGN.CENTER,
       autoResize: true,
-      angle: (isArrowElement(container) ? 0 : container?.angle ?? 0) as Radians,
     });
-    app.scene.mutateElement(container, {
+    mutateElement(container, {
       boundElements: (container.boundElements || []).concat({
         type: "text",
         id: textElement.id,
       }),
     });
     const originalContainerHeight = container.height;
-    redrawTextBoundingBox(textElement, container, app.scene);
+    redrawTextBoundingBox(
+      textElement,
+      container,
+      app.scene.getNonDeletedElementsMap(),
+    );
     // overwritting the cache with original container height so
     // it can be restored when unbind
     updateOriginalContainerCache(container.id, originalContainerHeight);
@@ -174,7 +161,7 @@ export const actionBindText = register({
     return {
       elements: pushTextAboveContainer(elements, container, textElement),
       appState: { ...appState, selectedElementIds: { [container.id]: true } },
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
 });
@@ -225,8 +212,8 @@ export const actionWrapTextInContainer = register({
   trackEvent: { category: "element" },
   predicate: (elements, appState, _, app) => {
     const selectedElements = app.scene.getSelectedElements(appState);
-    const someTextElements = selectedElements.some((el) => isTextElement(el));
-    return selectedElements.length > 0 && someTextElements;
+    const areTextElements = selectedElements.every((el) => isTextElement(el));
+    return selectedElements.length > 0 && areTextElements;
   },
   perform: (elements, appState, _, app) => {
     const selectedElements = app.scene.getSelectedElements(appState);
@@ -296,23 +283,27 @@ export const actionWrapTextInContainer = register({
             }
 
             if (startBinding || endBinding) {
-              app.scene.mutateElement(ele, {
-                startBinding,
-                endBinding,
-              });
+              mutateElement(ele, { startBinding, endBinding }, false);
             }
           });
         }
 
-        app.scene.mutateElement(textElement, {
-          containerId: container.id,
-          verticalAlign: VERTICAL_ALIGN.MIDDLE,
-          boundElements: null,
-          textAlign: TEXT_ALIGN.CENTER,
-          autoResize: true,
-        });
-
-        redrawTextBoundingBox(textElement, container, app.scene);
+        mutateElement(
+          textElement,
+          {
+            containerId: container.id,
+            verticalAlign: VERTICAL_ALIGN.MIDDLE,
+            boundElements: null,
+            textAlign: TEXT_ALIGN.CENTER,
+            autoResize: true,
+          },
+          false,
+        );
+        redrawTextBoundingBox(
+          textElement,
+          container,
+          app.scene.getNonDeletedElementsMap(),
+        );
 
         updatedElements = pushContainerBelowText(
           [...updatedElements, container],
@@ -330,7 +321,7 @@ export const actionWrapTextInContainer = register({
         ...appState,
         selectedElementIds: containerIds,
       },
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
 });

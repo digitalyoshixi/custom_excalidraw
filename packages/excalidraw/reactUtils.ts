@@ -2,10 +2,9 @@
  * @param func handler taking at most single parameter (event).
  */
 
-import { version as ReactVersion } from "react";
 import { unstable_batchedUpdates } from "react-dom";
-
-import { throttleRAF } from "@excalidraw/common";
+import { version as ReactVersion } from "react";
+import { throttleRAF } from "./utils";
 
 export const withBatchedUpdates = <
   TFunction extends ((event: any) => void) | (() => void),

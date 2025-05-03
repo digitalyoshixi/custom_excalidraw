@@ -1,14 +1,17 @@
-import { CaptureUpdateAction, newElementWith } from "@excalidraw/excalidraw";
+import { vi } from "vitest";
+import {
+  act,
+  render,
+  waitFor,
+} from "../../packages/excalidraw/tests/test-utils";
+import ExcalidrawApp from "../App";
+import { API } from "../../packages/excalidraw/tests/helpers/api";
+import { syncInvalidIndices } from "../../packages/excalidraw/fractionalIndex";
 import {
   createRedoAction,
   createUndoAction,
-} from "@excalidraw/excalidraw/actions/actionHistory";
-import { syncInvalidIndices } from "@excalidraw/element/fractionalIndex";
-import { API } from "@excalidraw/excalidraw/tests/helpers/api";
-import { act, render, waitFor } from "@excalidraw/excalidraw/tests/test-utils";
-import { vi } from "vitest";
-
-import ExcalidrawApp from "../App";
+} from "../../packages/excalidraw/actions/actionHistory";
+import { StoreAction, newElementWith } from "../../packages/excalidraw";
 
 const { h } = window;
 
@@ -86,7 +89,7 @@ describe("collaboration", () => {
 
     API.updateScene({
       elements: syncInvalidIndices([rect1, rect2]),
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     });
 
     API.updateScene({
@@ -94,7 +97,7 @@ describe("collaboration", () => {
         rect1,
         newElementWith(h.elements[1], { isDeleted: true }),
       ]),
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     });
 
     await waitFor(() => {
@@ -141,7 +144,7 @@ describe("collaboration", () => {
     // simulate force deleting the element remotely
     API.updateScene({
       elements: syncInvalidIndices([rect1]),
-      captureUpdate: CaptureUpdateAction.NEVER,
+      storeAction: StoreAction.UPDATE,
     });
 
     await waitFor(() => {
@@ -179,7 +182,7 @@ describe("collaboration", () => {
         h.elements[0],
         newElementWith(h.elements[1], { x: 100 }),
       ]),
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     });
 
     await waitFor(() => {
@@ -214,7 +217,7 @@ describe("collaboration", () => {
     // simulate force deleting the element remotely
     API.updateScene({
       elements: syncInvalidIndices([rect1]),
-      captureUpdate: CaptureUpdateAction.NEVER,
+      storeAction: StoreAction.UPDATE,
     });
 
     // snapshot was correctly updated and marked the element as deleted

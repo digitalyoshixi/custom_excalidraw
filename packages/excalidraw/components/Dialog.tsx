@@ -1,23 +1,21 @@
 import clsx from "clsx";
 import React, { useEffect, useState } from "react";
-
-import { KEYS, queryFocusableElements } from "@excalidraw/common";
-
-import { useSetAtom } from "../editor-jotai";
 import { useCallbackRefState } from "../hooks/useCallbackRefState";
-import { t } from "../i18n";
-
 import {
   useExcalidrawContainer,
   useDevice,
   useExcalidrawSetAppState,
 } from "./App";
-import { Island } from "./Island";
-import { isLibraryMenuOpenAtom } from "./LibraryMenu";
-import { Modal } from "./Modal";
-import { CloseIcon } from "./icons";
-
+import { KEYS } from "../keys";
 import "./Dialog.scss";
+import { Island } from "./Island";
+import { Modal } from "./Modal";
+import { queryFocusableElements } from "../utils";
+import { useSetAtom } from "jotai";
+import { isLibraryMenuOpenAtom } from "./LibraryMenu";
+import { jotaiScope } from "../jotai";
+import { t } from "../i18n";
+import { CloseIcon } from "./icons";
 
 export type DialogSize = number | "small" | "regular" | "wide" | undefined;
 
@@ -94,7 +92,7 @@ export const Dialog = (props: DialogProps) => {
   }, [islandNode, props.autofocus]);
 
   const setAppState = useExcalidrawSetAppState();
-  const setIsLibraryMenuOpen = useSetAtom(isLibraryMenuOpenAtom);
+  const setIsLibraryMenuOpen = useSetAtom(isLibraryMenuOpenAtom, jotaiScope);
 
   const onClose = () => {
     setAppState({ openMenu: null });

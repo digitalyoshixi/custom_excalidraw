@@ -1,10 +1,8 @@
-import clsx from "clsx";
-
 import "./ToolIcon.scss";
 
-import { PenModeIcon } from "./icons";
-
+import clsx from "clsx";
 import type { ToolButtonSize } from "./ToolButton";
+import { PenModeIcon } from "./icons";
 
 type PenModeIconProps = {
   title?: string;

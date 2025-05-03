@@ -1,36 +1,26 @@
-import { pointFrom, type GlobalPoint } from "@excalidraw/math";
 import { useMemo } from "react";
-
-import { MIN_WIDTH_OR_HEIGHT } from "@excalidraw/common";
-import { updateBoundElements } from "@excalidraw/element/binding";
-import {
-  rescalePointsInElement,
-  resizeSingleElement,
-} from "@excalidraw/element/resizeElements";
+import { getCommonBounds, isTextElement } from "../../element";
+import { updateBoundElements } from "../../element/binding";
+import { mutateElement } from "../../element/mutateElement";
+import { rescalePointsInElement } from "../../element/resizeElements";
 import {
   getBoundTextElement,
   handleBindTextResize,
-} from "@excalidraw/element/textElement";
-
-import { isTextElement } from "@excalidraw/element/typeChecks";
-
-import { getCommonBounds } from "@excalidraw/utils";
-
+} from "../../element/textElement";
 import type {
   ElementsMap,
   ExcalidrawElement,
   NonDeletedSceneElementsMap,
-} from "@excalidraw/element/types";
-
-import type Scene from "@excalidraw/element/Scene";
-
-import DragInput from "./DragInput";
-import { getAtomicUnits, getStepSizedValue, isPropertyEditable } from "./utils";
-import { getElementsInAtomicUnit } from "./utils";
-
-import type { DragInputCallbackType } from "./DragInput";
-import type { AtomicUnit } from "./utils";
+} from "../../element/types";
+import type Scene from "../../scene/Scene";
 import type { AppState } from "../../types";
+import DragInput from "./DragInput";
+import type { DragInputCallbackType } from "./DragInput";
+import { getAtomicUnits, getStepSizedValue, isPropertyEditable } from "./utils";
+import { getElementsInAtomicUnit, resizeElement } from "./utils";
+import type { AtomicUnit } from "./utils";
+import { MIN_WIDTH_OR_HEIGHT } from "../../constants";
+import { pointFrom, type GlobalPoint } from "../../../math";
 
 interface MultiDimensionProps {
   property: "width" | "height";
@@ -75,31 +65,34 @@ const resizeElementInGroup = (
   scale: number,
   latestElement: ExcalidrawElement,
   origElement: ExcalidrawElement,
+  elementsMap: NonDeletedSceneElementsMap,
   originalElementsMap: ElementsMap,
-  scene: Scene,
 ) => {
-  const elementsMap = scene.getNonDeletedElementsMap();
   const updates = getResizedUpdates(anchorX, anchorY, scale, origElement);
+  const { width: oldWidth, height: oldHeight } = latestElement;
 
-  scene.mutateElement(latestElement, updates);
-
+  mutateElement(latestElement, updates, false);
   const boundTextElement = getBoundTextElement(
     origElement,
     originalElementsMap,
   );
   if (boundTextElement) {
     const newFontSize = boundTextElement.fontSize * scale;
-    updateBoundElements(latestElement, scene, {
-      newSize: { width: updates.width, height: updates.height },
+    updateBoundElements(latestElement, elementsMap, {
+      oldSize: { width: oldWidth, height: oldHeight },
     });
     const latestBoundTextElement = elementsMap.get(boundTextElement.id);
     if (latestBoundTextElement && isTextElement(latestBoundTextElement)) {
-      scene.mutateElement(latestBoundTextElement, {
-        fontSize: newFontSize,
-      });
+      mutateElement(
+        latestBoundTextElement,
+        {
+          fontSize: newFontSize,
+        },
+        false,
+      );
       handleBindTextResize(
         latestElement,
-        scene,
+        elementsMap,
         property === "width" ? "e" : "s",
         true,
       );
@@ -116,8 +109,8 @@ const resizeGroup = (
   property: MultiDimensionProps["property"],
   latestElements: ExcalidrawElement[],
   originalElements: ExcalidrawElement[],
+  elementsMap: NonDeletedSceneElementsMap,
   originalElementsMap: ElementsMap,
-  scene: Scene,
 ) => {
   // keep aspect ratio for groups
   if (property === "width") {
@@ -139,8 +132,8 @@ const resizeGroup = (
       scale,
       latestElement,
       origElement,
+      elementsMap,
       originalElementsMap,
-      scene,
     );
   }
 };
@@ -158,6 +151,7 @@ const handleDimensionChange: DragInputCallbackType<
   property,
 }) => {
   const elementsMap = scene.getNonDeletedElementsMap();
+  const elements = scene.getNonDeletedElements();
   const atomicUnits = getAtomicUnits(originalElements, originalAppState);
   if (nextValue !== undefined) {
     for (const atomicUnit of atomicUnits) {
@@ -192,8 +186,8 @@ const handleDimensionChange: DragInputCallbackType<
           property,
           latestElements,
           originalElements,
+          elementsMap,
           originalElementsMap,
-          scene,
         );
       } else {
         const [el] = elementsInUnit;
@@ -230,17 +224,15 @@ const handleDimensionChange: DragInputCallbackType<
           nextWidth = Math.max(MIN_WIDTH_OR_HEIGHT, nextWidth);
           nextHeight = Math.max(MIN_WIDTH_OR_HEIGHT, nextHeight);
 
-          resizeSingleElement(
+          resizeElement(
             nextWidth,
             nextHeight,
-            latestElement,
+            false,
             origElement,
-            originalElementsMap,
+            elementsMap,
+            elements,
             scene,
-            property === "width" ? "e" : "s",
-            {
-              shouldInformMutation: false,
-            },
+            false,
           );
         }
       }
@@ -299,8 +291,8 @@ const handleDimensionChange: DragInputCallbackType<
         property,
         latestElements,
         originalElements,
+        elementsMap,
         originalElementsMap,
-        scene,
       );
     } else {
       const [el] = elementsInUnit;
@@ -333,17 +325,14 @@ const handleDimensionChange: DragInputCallbackType<
         nextWidth = Math.max(MIN_WIDTH_OR_HEIGHT, nextWidth);
         nextHeight = Math.max(MIN_WIDTH_OR_HEIGHT, nextHeight);
 
-        resizeSingleElement(
+        resizeElement(
           nextWidth,
           nextHeight,
-          latestElement,
+          false,
           origElement,
-          originalElementsMap,
+          elementsMap,
+          elements,
           scene,
-          property === "width" ? "e" : "s",
-          {
-            shouldInformMutation: false,
-          },
         );
       }
     }

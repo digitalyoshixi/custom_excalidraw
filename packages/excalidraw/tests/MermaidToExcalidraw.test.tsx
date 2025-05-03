@@ -1,11 +1,9 @@
 import React from "react";
-import { expect } from "vitest";
-
-import { Excalidraw } from "../index";
-
-import { mockMermaidToExcalidraw } from "./helpers/mocks";
-import { getTextEditor, updateTextEditor } from "./queries/dom";
 import { render, waitFor } from "./test-utils";
+import { Excalidraw } from "../index";
+import { expect } from "vitest";
+import { getTextEditor, updateTextEditor } from "./queries/dom";
+import { mockMermaidToExcalidraw } from "./helpers/mocks";
 
 mockMermaidToExcalidraw({
   mockRef: true,

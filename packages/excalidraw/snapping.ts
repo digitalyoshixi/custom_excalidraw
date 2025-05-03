@@ -1,3 +1,4 @@
+import type { InclusiveRange } from "../math";
 import {
   pointFrom,
   pointRotateRads,
@@ -5,40 +6,32 @@ import {
   rangeIntersection,
   rangesOverlap,
   type GlobalPoint,
-} from "@excalidraw/math";
-
-import { TOOL_TYPE, KEYS } from "@excalidraw/common";
+} from "../math";
+import { TOOL_TYPE } from "./constants";
+import type { Bounds } from "./element/bounds";
 import {
   getCommonBounds,
   getDraggedElementsBounds,
   getElementAbsoluteCoords,
-} from "@excalidraw/element/bounds";
-import {
-  isBoundToContainer,
-  isFrameLikeElement,
-} from "@excalidraw/element/typeChecks";
-
-import { getMaximumGroups } from "@excalidraw/element/groups";
-
-import {
-  getSelectedElements,
-  getVisibleAndNonSelectedElements,
-} from "@excalidraw/element/selection";
-
-import type { InclusiveRange } from "@excalidraw/math";
-
-import type { Bounds } from "@excalidraw/element/bounds";
-import type { MaybeTransformHandleType } from "@excalidraw/element/transformHandles";
+} from "./element/bounds";
+import type { MaybeTransformHandleType } from "./element/transformHandles";
+import { isBoundToContainer, isFrameLikeElement } from "./element/typeChecks";
 import type {
   ElementsMap,
   ExcalidrawElement,
   NonDeletedExcalidrawElement,
-} from "@excalidraw/element/types";
-
+} from "./element/types";
+import { getMaximumGroups } from "./groups";
+import { KEYS } from "./keys";
+import {
+  getSelectedElements,
+  getVisibleAndNonSelectedElements,
+} from "./scene/selection";
 import type {
   AppClassProperties,
   AppState,
   KeyboardModifiersObject,
+  NullableGridSize,
 } from "./types";
 
 const SNAP_DISTANCE = 8;
@@ -1414,4 +1407,19 @@ export const isActiveToolNonLinearSnappable = (
     activeToolType === TOOL_TYPE.image ||
     activeToolType === TOOL_TYPE.text
   );
+};
+
+// TODO: Rounding this point causes some shake when free drawing
+export const getGridPoint = (
+  x: number,
+  y: number,
+  gridSize: NullableGridSize,
+): [number, number] => {
+  if (gridSize) {
+    return [
+      Math.round(x / gridSize) * gridSize,
+      Math.round(y / gridSize) * gridSize,
+    ];
+  }
+  return [x, y];
 };

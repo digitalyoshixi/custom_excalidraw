@@ -1,11 +1,11 @@
-import { UI } from "@excalidraw/excalidraw/tests/helpers/ui";
+import ExcalidrawApp from "../App";
 import {
   mockBoundingClientRect,
   render,
   restoreOriginalGetBoundingClientRect,
-} from "@excalidraw/excalidraw/tests/test-utils";
+} from "../../packages/excalidraw/tests/test-utils";
 
-import ExcalidrawApp from "../App";
+import { UI } from "../../packages/excalidraw/tests/helpers/ui";
 
 describe("Test MobileMenu", () => {
   const { h } = window;

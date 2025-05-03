@@ -1,10 +1,8 @@
-import { exportToSvg } from "@excalidraw/utils/export";
+import { atom, useAtom } from "jotai";
 import { useEffect, useState } from "react";
-
-import { COLOR_PALETTE } from "@excalidraw/common";
-
-import { atom, useAtom } from "../editor-jotai";
-
+import { COLOR_PALETTE } from "../colors";
+import { jotaiScope } from "../jotai";
+import { exportToSvg } from "../../utils/export";
 import type { LibraryItem } from "../types";
 
 export type SvgCache = Map<LibraryItem["id"], SVGSVGElement>;
@@ -66,7 +64,7 @@ export const useLibraryItemSvg = (
 };
 
 export const useLibraryCache = () => {
-  const [svgCache] = useAtom(libraryItemSvgsCache);
+  const [svgCache] = useAtom(libraryItemSvgsCache, jotaiScope);
 
   const clearLibraryCache = () => svgCache.clear();
 

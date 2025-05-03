@@ -1,29 +1,19 @@
-import {
-  getBoundTextElement,
-  redrawTextBoundingBox,
-} from "@excalidraw/element/textElement";
-import {
-  hasBoundTextElement,
-  isTextElement,
-} from "@excalidraw/element/typeChecks";
-
-import { isInGroup } from "@excalidraw/element/groups";
-
+import { isTextElement, redrawTextBoundingBox } from "../../element";
+import { mutateElement } from "../../element/mutateElement";
+import { hasBoundTextElement } from "../../element/typeChecks";
 import type {
   ExcalidrawElement,
   ExcalidrawTextElement,
   NonDeletedSceneElementsMap,
-} from "@excalidraw/element/types";
-
-import type Scene from "@excalidraw/element/Scene";
-
+} from "../../element/types";
+import { isInGroup } from "../../groups";
+import type Scene from "../../scene/Scene";
 import { fontSizeIcon } from "../icons";
-
 import StatsDragInput from "./DragInput";
-import { getStepSizedValue } from "./utils";
-
 import type { DragInputCallbackType } from "./DragInput";
+import { getStepSizedValue } from "./utils";
 import type { AppState } from "../../types";
+import { getBoundTextElement } from "../../element/textElement";
 
 interface MultiFontSizeProps {
   elements: readonly ExcalidrawElement[];
@@ -84,14 +74,19 @@ const handleFontSizeChange: DragInputCallbackType<
     nextFontSize = Math.max(Math.round(nextValue), MIN_FONT_SIZE);
 
     for (const textElement of latestTextElements) {
-      scene.mutateElement(textElement, {
-        fontSize: nextFontSize,
-      });
+      mutateElement(
+        textElement,
+        {
+          fontSize: nextFontSize,
+        },
+        false,
+      );
 
       redrawTextBoundingBox(
         textElement,
         scene.getContainerElement(textElement),
-        scene,
+        elementsMap,
+        false,
       );
     }
 
@@ -112,14 +107,19 @@ const handleFontSizeChange: DragInputCallbackType<
       if (shouldChangeByStepSize) {
         nextFontSize = getStepSizedValue(nextFontSize, STEP_SIZE);
       }
-      scene.mutateElement(latestElement, {
-        fontSize: nextFontSize,
-      });
+      mutateElement(
+        latestElement,
+        {
+          fontSize: nextFontSize,
+        },
+        false,
+      );
 
       redrawTextBoundingBox(
         latestElement,
         scene.getContainerElement(latestElement),
-        scene,
+        elementsMap,
+        false,
       );
     }
 

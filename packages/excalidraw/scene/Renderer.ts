@@ -1,22 +1,17 @@
-import { isElementInViewport } from "@excalidraw/element/sizeHelpers";
-import { isImageElement } from "@excalidraw/element/typeChecks";
-
-import { memoize, toBrandedType } from "@excalidraw/common";
-
+import { isElementInViewport } from "../element/sizeHelpers";
+import { isImageElement } from "../element/typeChecks";
 import type {
   ExcalidrawElement,
   NonDeletedElementsMap,
   NonDeletedExcalidrawElement,
-} from "@excalidraw/element/types";
-
-import type Scene from "@excalidraw/element/Scene";
-
+} from "../element/types";
 import { renderInteractiveSceneThrottled } from "../renderer/interactiveScene";
 import { renderStaticSceneThrottled } from "../renderer/staticScene";
 
-import type { RenderableElementsMap } from "./types";
-
 import type { AppState } from "../types";
+import { memoize, toBrandedType } from "../utils";
+import type Scene from "./Scene";
+import type { RenderableElementsMap } from "./types";
 
 export class Renderer {
   private scene: Scene;

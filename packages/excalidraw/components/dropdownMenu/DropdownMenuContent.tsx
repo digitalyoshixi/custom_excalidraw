@@ -1,15 +1,13 @@
-import clsx from "clsx";
-import React, { useEffect, useRef } from "react";
-
-import { EVENT, KEYS } from "@excalidraw/common";
-
-import { useOutsideClick } from "../../hooks/useOutsideClick";
-import { useStable } from "../../hooks/useStable";
-import { useDevice } from "../App";
 import { Island } from "../Island";
+import { useDevice } from "../App";
+import clsx from "clsx";
 import Stack from "../Stack";
-
+import React, { useEffect, useRef } from "react";
 import { DropdownMenuContentPropsContext } from "./common";
+import { useOutsideClick } from "../../hooks/useOutsideClick";
+import { KEYS } from "../../keys";
+import { EVENT } from "../../constants";
+import { useStable } from "../../hooks/useStable";
 
 const MenuContent = ({
   children,

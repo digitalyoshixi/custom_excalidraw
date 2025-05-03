@@ -1,12 +1,11 @@
 import React from "react";
-
-import DropdownMenuContent from "./DropdownMenuContent";
-import DropdownMenuGroup from "./DropdownMenuGroup";
-import DropdownMenuItem from "./DropdownMenuItem";
-import DropdownMenuItemCustom from "./DropdownMenuItemCustom";
-import DropdownMenuItemLink from "./DropdownMenuItemLink";
-import MenuSeparator from "./DropdownMenuSeparator";
 import DropdownMenuTrigger from "./DropdownMenuTrigger";
+import DropdownMenuItem from "./DropdownMenuItem";
+import MenuSeparator from "./DropdownMenuSeparator";
+import DropdownMenuGroup from "./DropdownMenuGroup";
+import DropdownMenuContent from "./DropdownMenuContent";
+import DropdownMenuItemLink from "./DropdownMenuItemLink";
+import DropdownMenuItemCustom from "./DropdownMenuItemCustom";
 import {
   getMenuContentComponent,
   getMenuTriggerComponent,

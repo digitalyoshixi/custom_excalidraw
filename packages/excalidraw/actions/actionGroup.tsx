@@ -1,21 +1,10 @@
-import { getNonDeletedElements } from "@excalidraw/element";
-
-import { newElementWith } from "@excalidraw/element/mutateElement";
-
-import { isBoundToContainer } from "@excalidraw/element/typeChecks";
-
-import {
-  frameAndChildrenSelectedTogether,
-  getElementsInResizingFrame,
-  getFrameLikeElements,
-  getRootElements,
-  groupByFrameLikes,
-  removeElementsFromFrame,
-  replaceAllElementsInFrame,
-} from "@excalidraw/element/frame";
-
-import { KEYS, randomId, arrayToMap, getShortcutKey } from "@excalidraw/common";
-
+import { KEYS } from "../keys";
+import { t } from "../i18n";
+import { arrayToMap, getShortcutKey } from "../utils";
+import { register } from "./register";
+import { UngroupIcon, GroupIcon } from "../components/icons";
+import { newElementWith } from "../element/mutateElement";
+import { isSomeElementSelected } from "../scene";
 import {
   getSelectedGroupIds,
   selectGroup,
@@ -24,27 +13,26 @@ import {
   addToGroup,
   removeFromSelectedGroups,
   isElementInGroup,
-} from "@excalidraw/element/groups";
-
-import { syncMovedIndices } from "@excalidraw/element/fractionalIndex";
-
+} from "../groups";
+import { getNonDeletedElements } from "../element";
+import { randomId } from "../random";
+import { ToolButton } from "../components/ToolButton";
 import type {
   ExcalidrawElement,
   ExcalidrawTextElement,
   OrderedExcalidrawElement,
-} from "@excalidraw/element/types";
-
-import { ToolButton } from "../components/ToolButton";
-import { UngroupIcon, GroupIcon } from "../components/icons";
-
-import { t } from "../i18n";
-
-import { isSomeElementSelected } from "../scene";
-import { CaptureUpdateAction } from "../store";
-
-import { register } from "./register";
-
+} from "../element/types";
 import type { AppClassProperties, AppState } from "../types";
+import { isBoundToContainer } from "../element/typeChecks";
+import {
+  getElementsInResizingFrame,
+  getFrameLikeElements,
+  groupByFrameLikes,
+  removeElementsFromFrame,
+  replaceAllElementsInFrame,
+} from "../frame";
+import { syncMovedIndices } from "../fractionalIndex";
+import { StoreAction } from "../store";
 
 const allElementsInSameGroup = (elements: readonly ExcalidrawElement[]) => {
   if (elements.length >= 2) {
@@ -72,11 +60,8 @@ const enableActionGroup = (
     selectedElementIds: appState.selectedElementIds,
     includeBoundTextElement: true,
   });
-
   return (
-    selectedElements.length >= 2 &&
-    !allElementsInSameGroup(selectedElements) &&
-    !frameAndChildrenSelectedTogether(selectedElements)
+    selectedElements.length >= 2 && !allElementsInSameGroup(selectedElements)
   );
 };
 
@@ -86,19 +71,13 @@ export const actionGroup = register({
   icon: (appState) => <GroupIcon theme={appState.theme} />,
   trackEvent: { category: "element" },
   perform: (elements, appState, _, app) => {
-    const selectedElements = getRootElements(
-      app.scene.getSelectedElements({
-        selectedElementIds: appState.selectedElementIds,
-        includeBoundTextElement: true,
-      }),
-    );
+    const selectedElements = app.scene.getSelectedElements({
+      selectedElementIds: appState.selectedElementIds,
+      includeBoundTextElement: true,
+    });
     if (selectedElements.length < 2) {
       // nothing to group
-      return {
-        appState,
-        elements,
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
-      };
+      return { appState, elements, storeAction: StoreAction.NONE };
     }
     // if everything is already grouped into 1 group, there is nothing to do
     const selectedGroupIds = getSelectedGroupIds(appState);
@@ -118,11 +97,7 @@ export const actionGroup = register({
       ]);
       if (combinedSet.size === elementIdsInGroup.size) {
         // no incremental ids in the selected ids
-        return {
-          appState,
-          elements,
-          captureUpdate: CaptureUpdateAction.EVENTUALLY,
-        };
+        return { appState, elements, storeAction: StoreAction.NONE };
       }
     }
 
@@ -188,7 +163,7 @@ export const actionGroup = register({
         ),
       },
       elements: reorderedElements,
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   predicate: (elements, appState, _, app) =>
@@ -218,11 +193,7 @@ export const actionUngroup = register({
     const elementsMap = arrayToMap(elements);
 
     if (groupIds.length === 0) {
-      return {
-        appState,
-        elements,
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
-      };
+      return { appState, elements, storeAction: StoreAction.NONE };
     }
 
     let nextElements = [...elements];
@@ -295,7 +266,7 @@ export const actionUngroup = register({
     return {
       appState: { ...appState, ...updateAppState },
       elements: nextElements,
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   keyTest: (event) =>

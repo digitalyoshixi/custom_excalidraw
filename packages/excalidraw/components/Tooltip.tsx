@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
-
 import "./Tooltip.scss";
+
+import React, { useEffect } from "react";
 
 export const getTooltipDiv = () => {
   const existingDiv = document.querySelector<HTMLDivElement>(

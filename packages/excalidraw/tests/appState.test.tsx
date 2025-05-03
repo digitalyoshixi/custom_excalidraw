@@ -1,15 +1,11 @@
 import React from "react";
-
-import { EXPORT_DATA_TYPES, MIME_TYPES } from "@excalidraw/common";
-
-import type { ExcalidrawTextElement } from "@excalidraw/element/types";
-
-import { getDefaultAppState } from "../appState";
-import { Excalidraw } from "../index";
-
-import { API } from "./helpers/api";
-import { Pointer, UI } from "./helpers/ui";
 import { fireEvent, queryByTestId, render, waitFor } from "./test-utils";
+import { Excalidraw } from "../index";
+import { API } from "./helpers/api";
+import { getDefaultAppState } from "../appState";
+import { EXPORT_DATA_TYPES, MIME_TYPES } from "../constants";
+import { Pointer, UI } from "./helpers/ui";
+import type { ExcalidrawTextElement } from "../element/types";
 
 const { h } = window;
 

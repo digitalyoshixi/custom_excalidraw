@@ -1,14 +1,13 @@
-import { isDarwin, getShortcutKey } from "@excalidraw/common";
-
-import type { SubtypeOf } from "@excalidraw/common/utility-types";
-
+import { isDarwin } from "../constants";
 import { t } from "../i18n";
-
-import type { ActionName } from "./types";
+import type { SubtypeOf } from "../utility-types";
+import { getShortcutKey } from "../utils";
+import type { ActionName, CustomActionName } from "./types";
 
 export type ShortcutName =
   | SubtypeOf<
       ActionName,
+      | CustomActionName
       | "toggleTheme"
       | "loadScene"
       | "clearCanvas"
@@ -25,6 +24,7 @@ export type ShortcutName =
       | "sendToBack"
       | "bringToFront"
       | "copyAsPng"
+      | "copyAsSvg"
       | "group"
       | "ungroup"
       | "gridMode"
@@ -49,12 +49,20 @@ export type ShortcutName =
       | "saveFileToDisk"
       | "saveToActiveFile"
       | "toggleShortcuts"
-      | "wrapSelectionInFrame"
     >
   | "saveScene"
   | "imageExport"
   | "commandPalette"
   | "searchMenu";
+
+export const registerCustomShortcuts = (
+  shortcuts: Record<CustomActionName, string[]>,
+) => {
+  for (const key in shortcuts) {
+    const shortcut = key as CustomActionName;
+    shortcutMap[shortcut] = shortcuts[shortcut];
+  }
+};
 
 const shortcutMap: Record<ShortcutName, string[]> = {
   toggleTheme: [getShortcutKey("Shift+Alt+D")],
@@ -90,6 +98,7 @@ const shortcutMap: Record<ShortcutName, string[]> = {
       : getShortcutKey("CtrlOrCmd+Shift+]"),
   ],
   copyAsPng: [getShortcutKey("Shift+Alt+C")],
+  copyAsSvg: [],
   group: [getShortcutKey("CtrlOrCmd+G")],
   ungroup: [getShortcutKey("CtrlOrCmd+Shift+G")],
   gridMode: [getShortcutKey("CtrlOrCmd+'")],
@@ -115,7 +124,6 @@ const shortcutMap: Record<ShortcutName, string[]> = {
   saveToActiveFile: [getShortcutKey("CtrlOrCmd+S")],
   toggleShortcuts: [getShortcutKey("?")],
   searchMenu: [getShortcutKey("CtrlOrCmd+F")],
-  wrapSelectionInFrame: [],
 };
 
 export const getShortcutFromShortcutName = (name: ShortcutName, idx = 0) => {

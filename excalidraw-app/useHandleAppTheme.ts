@@ -1,23 +1,23 @@
-import { THEME } from "@excalidraw/excalidraw";
-import { EVENT, CODES, KEYS } from "@excalidraw/common";
+import { atom, useAtom } from "jotai";
 import { useEffect, useLayoutEffect, useState } from "react";
-
-import type { Theme } from "@excalidraw/element/types";
-
+import { THEME } from "../packages/excalidraw";
+import { EVENT } from "../packages/excalidraw/constants";
+import type { Theme } from "../packages/excalidraw/element/types";
+import { CODES, KEYS } from "../packages/excalidraw/keys";
 import { STORAGE_KEYS } from "./app_constants";
+
+export const appThemeAtom = atom<Theme | "system">(
+  (localStorage.getItem(STORAGE_KEYS.LOCAL_STORAGE_THEME) as
+    | Theme
+    | "system"
+    | null) || THEME.LIGHT,
+);
 
 const getDarkThemeMediaQuery = (): MediaQueryList | undefined =>
   window.matchMedia?.("(prefers-color-scheme: dark)");
 
 export const useHandleAppTheme = () => {
-  const [appTheme, setAppTheme] = useState<Theme | "system">(() => {
-    return (
-      (localStorage.getItem(STORAGE_KEYS.LOCAL_STORAGE_THEME) as
-        | Theme
-        | "system"
-        | null) || THEME.LIGHT
-    );
-  });
+  const [appTheme, setAppTheme] = useAtom(appThemeAtom);
   const [editorTheme, setEditorTheme] = useState<Theme>(THEME.LIGHT);
 
   useEffect(() => {
@@ -66,5 +66,5 @@ export const useHandleAppTheme = () => {
     }
   }, [appTheme]);
 
-  return { editorTheme, appTheme, setAppTheme };
+  return { editorTheme };
 };

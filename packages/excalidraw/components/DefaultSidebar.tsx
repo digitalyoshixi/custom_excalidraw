@@ -1,27 +1,21 @@
 import clsx from "clsx";
-
 import {
   CANVAS_SEARCH_TAB,
   DEFAULT_SIDEBAR,
   LIBRARY_SIDEBAR_TAB,
-  composeEventHandlers,
-} from "@excalidraw/common";
-
-import type { MarkOptional, Merge } from "@excalidraw/common/utility-types";
-
+} from "../constants";
 import { useTunnels } from "../context/tunnels";
 import { useUIAppState } from "../context/ui-appState";
-
-import "../components/dropdownMenu/DropdownMenu.scss";
-
+import type { MarkOptional, Merge } from "../utility-types";
+import { composeEventHandlers } from "../utils";
 import { useExcalidrawSetAppState } from "./App";
-import { LibraryMenu } from "./LibraryMenu";
-import { SearchMenu } from "./SearchMenu";
-import { Sidebar } from "./Sidebar/Sidebar";
 import { withInternalFallback } from "./hoc/withInternalFallback";
-import { LibraryIcon, searchIcon } from "./icons";
-
+import { LibraryMenu } from "./LibraryMenu";
 import type { SidebarProps, SidebarTriggerProps } from "./Sidebar/common";
+import { Sidebar } from "./Sidebar/Sidebar";
+import "../components/dropdownMenu/DropdownMenu.scss";
+import { SearchMenu } from "./SearchMenu";
+import { LibraryIcon, searchIcon } from "./icons";
 
 const DefaultSidebarTrigger = withInternalFallback(
   "DefaultSidebarTrigger",

@@ -1,13 +1,9 @@
 import React from "react";
-
-import { resolvablePromise } from "@excalidraw/common";
-
 import { Excalidraw } from "../index";
-
-import { Pointer } from "./helpers/ui";
-import { act, render } from "./test-utils";
-
 import type { ExcalidrawImperativeAPI } from "../types";
+import { resolvablePromise } from "../utils";
+import { act, render } from "./test-utils";
+import { Pointer } from "./helpers/ui";
 
 describe("setActiveTool()", () => {
   const h = window.h;

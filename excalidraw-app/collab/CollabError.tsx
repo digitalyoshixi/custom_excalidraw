@@ -1,11 +1,10 @@
-import { Tooltip } from "@excalidraw/excalidraw/components/Tooltip";
-import { warning } from "@excalidraw/excalidraw/components/icons";
+import { Tooltip } from "../../packages/excalidraw/components/Tooltip";
+import { warning } from "../../packages/excalidraw/components/icons";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 
-import { atom } from "../app-jotai";
-
 import "./CollabError.scss";
+import { atom } from "jotai";
 
 type ErrorIndicator = {
   message: string | null;
@@ -20,16 +19,16 @@ export const collabErrorIndicatorAtom = atom<ErrorIndicator>({
 
 const CollabError = ({ collabError }: { collabError: ErrorIndicator }) => {
   const [isAnimating, setIsAnimating] = useState(false);
-  const clearAnimationRef = useRef<string | number>(0);
+  const clearAnimationRef = useRef<string | number | NodeJS.Timeout>();
 
   useEffect(() => {
     setIsAnimating(true);
-    clearAnimationRef.current = window.setTimeout(() => {
+    clearAnimationRef.current = setTimeout(() => {
       setIsAnimating(false);
     }, 1000);
 
     return () => {
-      window.clearTimeout(clearAnimationRef.current);
+      clearTimeout(clearAnimationRef.current);
     };
   }, [collabError.message, collabError.nonce]);
 

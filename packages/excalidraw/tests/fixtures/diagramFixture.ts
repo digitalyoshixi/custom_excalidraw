@@ -1,5 +1,4 @@
-import { VERSIONS } from "@excalidraw/common";
-
+import { VERSIONS } from "../../constants";
 import {
   diamondFixture,
   ellipseFixture,

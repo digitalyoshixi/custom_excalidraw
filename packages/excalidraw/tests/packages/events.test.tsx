@@ -1,14 +1,11 @@
 import React from "react";
 import { vi } from "vitest";
-
-import { resolvablePromise } from "@excalidraw/common";
-
-import { Excalidraw, CaptureUpdateAction } from "../../index";
-import { API } from "../helpers/api";
-import { Pointer } from "../helpers/ui";
-import { render } from "../test-utils";
-
+import { Excalidraw, StoreAction } from "../../index";
 import type { ExcalidrawImperativeAPI } from "../../types";
+import { resolvablePromise } from "../../utils";
+import { render } from "../test-utils";
+import { Pointer } from "../helpers/ui";
+import { API } from "../helpers/api";
 
 describe("event callbacks", () => {
   const h = window.h;
@@ -34,7 +31,7 @@ describe("event callbacks", () => {
     excalidrawAPI.onChange(onChange);
     API.updateScene({
       appState: { viewBackgroundColor: "red" },
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     });
     expect(onChange).toHaveBeenCalledWith(
       // elements

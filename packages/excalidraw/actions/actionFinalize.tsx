@@ -1,30 +1,22 @@
-import { pointFrom } from "@excalidraw/math";
-
+import { KEYS } from "../keys";
+import { isInvisiblySmallElement } from "../element";
+import { arrayToMap, updateActiveTool } from "../utils";
+import { ToolButton } from "../components/ToolButton";
+import { done } from "../components/icons";
+import { t } from "../i18n";
+import { register } from "./register";
+import { mutateElement } from "../element/mutateElement";
+import { LinearElementEditor } from "../element/linearElementEditor";
 import {
   maybeBindLinearElement,
   bindOrUnbindLinearElement,
-} from "@excalidraw/element/binding";
-import { LinearElementEditor } from "@excalidraw/element/linearElementEditor";
-
-import {
-  isBindingElement,
-  isLinearElement,
-} from "@excalidraw/element/typeChecks";
-
-import { KEYS, arrayToMap, updateActiveTool } from "@excalidraw/common";
-import { isPathALoop } from "@excalidraw/element/shapes";
-
-import { isInvisiblySmallElement } from "@excalidraw/element/sizeHelpers";
-
-import { t } from "../i18n";
-import { resetCursor } from "../cursor";
-import { done } from "../components/icons";
-import { ToolButton } from "../components/ToolButton";
-import { CaptureUpdateAction } from "../store";
-
-import { register } from "./register";
-
+} from "../element/binding";
+import { isBindingElement, isLinearElement } from "../element/typeChecks";
 import type { AppState } from "../types";
+import { resetCursor } from "../cursor";
+import { StoreAction } from "../store";
+import { pointFrom } from "../../math";
+import { isPathALoop } from "../shapes";
 
 export const actionFinalize = register({
   name: "finalize",
@@ -46,6 +38,7 @@ export const actionFinalize = register({
             element,
             startBindingElement,
             endBindingElement,
+            elementsMap,
             scene,
           );
         }
@@ -59,7 +52,7 @@ export const actionFinalize = register({
             cursorButton: "up",
             editingLinearElement: null,
           },
-          captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+          storeAction: StoreAction.CAPTURE,
         };
       }
     }
@@ -71,11 +64,7 @@ export const actionFinalize = register({
       scene.getElement(appState.pendingImageElementId);
 
     if (pendingImageElement) {
-      scene.mutateElement(
-        pendingImageElement,
-        { isDeleted: true },
-        { informMutation: false, isDragging: false },
-      );
+      mutateElement(pendingImageElement, { isDeleted: true }, false);
     }
 
     if (window.document.activeElement instanceof HTMLElement) {
@@ -99,7 +88,7 @@ export const actionFinalize = register({
           !lastCommittedPoint ||
           points[points.length - 1] !== lastCommittedPoint
         ) {
-          scene.mutateElement(multiPointElement, {
+          mutateElement(multiPointElement, {
             points: multiPointElement.points.slice(0, -1),
           });
         }
@@ -123,7 +112,7 @@ export const actionFinalize = register({
         if (isLoop) {
           const linePoints = multiPointElement.points;
           const firstPoint = linePoints[0];
-          scene.mutateElement(multiPointElement, {
+          mutateElement(multiPointElement, {
             points: linePoints.map((p, index) =>
               index === linePoints.length - 1
                 ? pointFrom(firstPoint[0], firstPoint[1])
@@ -143,7 +132,13 @@ export const actionFinalize = register({
           -1,
           arrayToMap(elements),
         );
-        maybeBindLinearElement(multiPointElement, appState, { x, y }, scene);
+        maybeBindLinearElement(
+          multiPointElement,
+          appState,
+          { x, y },
+          elementsMap,
+          elements,
+        );
       }
     }
 
@@ -199,15 +194,12 @@ export const actionFinalize = register({
         // To select the linear element when user has finished mutipoint editing
         selectedLinearElement:
           multiPointElement && isLinearElement(multiPointElement)
-            ? new LinearElementEditor(
-                multiPointElement,
-                arrayToMap(newElements),
-              )
+            ? new LinearElementEditor(multiPointElement)
             : appState.selectedLinearElement,
         pendingImageElementId: null,
       },
       // TODO: #7348 we should not capture everything, but if we don't, it leads to incosistencies -> revisit
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   keyTest: (event, appState) =>

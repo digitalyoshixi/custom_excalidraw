@@ -1,5 +1,5 @@
+import { COLOR_PALETTE } from "./colors";
 import {
-  COLOR_PALETTE,
   ARROW_TYPE,
   DEFAULT_ELEMENT_PROPS,
   DEFAULT_FONT_FAMILY,
@@ -10,8 +10,7 @@ import {
   STATS_PANELS,
   THEME,
   DEFAULT_GRID_STEP,
-} from "@excalidraw/common";
-
+} from "./constants";
 import type { AppState, NormalizedZoomValue } from "./types";
 
 const defaultExportScale = EXPORT_SCALES.includes(devicePixelRatio)
@@ -52,7 +51,6 @@ export const getDefaultAppState = (): Omit<
       type: "selection",
       customType: null,
       locked: DEFAULT_ELEMENT_PROPS.locked,
-      fromSelection: false,
       lastActiveTool: null,
     },
     penMode: false,
@@ -86,7 +84,6 @@ export const getDefaultAppState = (): Omit<
     scrollX: 0,
     scrollY: 0,
     selectedElementIds: {},
-    hoveredElementIds: {},
     selectedGroupIds: {},
     selectedElementsAreBeingDragged: false,
     selectionElement: null,
@@ -119,8 +116,6 @@ export const getDefaultAppState = (): Omit<
     objectsSnapModeEnabled: false,
     userToFollow: null,
     followedBy: new Set(),
-    isCropping: false,
-    croppingElementId: null,
     searchMatches: [],
   };
 };
@@ -175,6 +170,8 @@ const APP_STATE_STORAGE_CONF = (<
   editingGroupId: { browser: true, export: false, server: false },
   editingLinearElement: { browser: false, export: false, server: false },
   activeTool: { browser: true, export: false, server: false },
+  activeSubtypes: { browser: true, export: false, server: false },
+  customData: { browser: true, export: false, server: false },
   penMode: { browser: true, export: false, server: false },
   penDetected: { browser: true, export: false, server: false },
   errorMessage: { browser: false, export: false, server: false },
@@ -213,7 +210,6 @@ const APP_STATE_STORAGE_CONF = (<
   scrollX: { browser: true, export: false, server: false },
   scrollY: { browser: true, export: false, server: false },
   selectedElementIds: { browser: true, export: false, server: false },
-  hoveredElementIds: { browser: false, export: false, server: false },
   selectedGroupIds: { browser: true, export: false, server: false },
   selectedElementsAreBeingDragged: {
     browser: false,
@@ -243,8 +239,6 @@ const APP_STATE_STORAGE_CONF = (<
   objectsSnapModeEnabled: { browser: true, export: false, server: false },
   userToFollow: { browser: false, export: false, server: false },
   followedBy: { browser: false, export: false, server: false },
-  isCropping: { browser: false, export: false, server: false },
-  croppingElementId: { browser: false, export: false, server: false },
   searchMatches: { browser: false, export: false, server: false },
 });
 

@@ -1,5 +1,4 @@
 import clsx from "clsx";
-
 import { useDevice } from "../App";
 
 const MenuTrigger = ({

@@ -1,56 +1,43 @@
+import type { Drawable } from "roughjs/bin/core";
+import type { RoughSVG } from "roughjs/bin/svg";
 import {
   FRAME_STYLE,
   MAX_DECIMALS_FOR_SVG_EXPORT,
   MIME_TYPES,
   SVG_NS,
-  getFontFamilyString,
-  isRTL,
-  isTestEnv,
-  getVerticalOffset,
-} from "@excalidraw/common";
-import { normalizeLink, toValidURL } from "@excalidraw/common";
-import { hashString } from "@excalidraw/element";
-import { getUncroppedWidthAndHeight } from "@excalidraw/element/cropElement";
+} from "../constants";
+import { normalizeLink, toValidURL } from "../data/url";
+import { getElementAbsoluteCoords } from "../element";
 import {
   createPlaceholderEmbeddableLabel,
   getEmbedLink,
-} from "@excalidraw/element/embeddable";
-import { LinearElementEditor } from "@excalidraw/element/linearElementEditor";
+} from "../element/embeddable";
+import { LinearElementEditor } from "../element/linearElementEditor";
 import {
   getBoundTextElement,
   getContainerElement,
-} from "@excalidraw/element/textElement";
-import { getLineHeightInPx } from "@excalidraw/element/textMeasurements";
+  getLineHeightInPx,
+} from "../element/textElement";
 import {
   isArrowElement,
   isIframeLikeElement,
   isInitializedImageElement,
   isTextElement,
-} from "@excalidraw/element/typeChecks";
-
-import { getContainingFrame } from "@excalidraw/element/frame";
-
-import { getCornerRadius, isPathALoop } from "@excalidraw/element/shapes";
-
-import { ShapeCache } from "@excalidraw/element/ShapeCache";
-
-import {
-  getFreeDrawSvgPath,
-  IMAGE_INVERT_FILTER,
-} from "@excalidraw/element/renderElement";
-
-import { getElementAbsoluteCoords } from "@excalidraw/element/bounds";
-
+} from "../element/typeChecks";
 import type {
   ExcalidrawElement,
   ExcalidrawTextElementWithContainer,
   NonDeletedExcalidrawElement,
-} from "@excalidraw/element/types";
-
+} from "../element/types";
+import { getContainingFrame } from "../frame";
+import { ShapeCache } from "../scene/ShapeCache";
 import type { RenderableElementsMap, SVGRenderConfig } from "../scene/types";
 import type { AppState, BinaryFiles } from "../types";
-import type { Drawable } from "roughjs/bin/core";
-import type { RoughSVG } from "roughjs/bin/svg";
+import { getFontFamilyString, isRTL, isTestEnv } from "../utils";
+import { getFreeDrawSvgPath, IMAGE_INVERT_FILTER } from "./renderElement";
+import { getSubtypeMethods } from "../element/subtypes";
+import { getVerticalOffset } from "../fonts";
+import { getCornerRadius, isPathALoop } from "../shapes";
 
 const roughSVGDrawWithPrecision = (
   rsvg: RoughSVG,
@@ -138,6 +125,15 @@ const renderElementToSvg = (
     }
     root.appendChild(node);
   };
+
+  const map = getSubtypeMethods(element.subtype);
+  if (map?.renderSvg) {
+    map.renderSvg(svgRoot, addToRoot, element, elementsMap, {
+      offsetX,
+      offsetY,
+    });
+    return;
+  }
 
   const opacity =
     ((getContainingFrame(element, elementsMap)?.opacity ?? 100) *
@@ -424,45 +420,22 @@ const renderElementToSvg = (
       const fileData =
         isInitializedImageElement(element) && files[element.fileId];
       if (fileData) {
-        const { reuseImages = true } = renderConfig;
-
-        let symbolId = `image-${fileData.id}`;
-
-        let uncroppedWidth = element.width;
-        let uncroppedHeight = element.height;
-        if (element.crop) {
-          ({ width: uncroppedWidth, height: uncroppedHeight } =
-            getUncroppedWidthAndHeight(element));
-
-          symbolId = `image-crop-${fileData.id}-${hashString(
-            `${uncroppedWidth}x${uncroppedHeight}`,
-          )}`;
-        }
-
-        if (!reuseImages) {
-          symbolId = `image-${element.id}`;
-        }
-
+        const symbolId = `image-${fileData.id}`;
         let symbol = svgRoot.querySelector(`#${symbolId}`);
         if (!symbol) {
           symbol = svgRoot.ownerDocument!.createElementNS(SVG_NS, "symbol");
           symbol.id = symbolId;
 
           const image = svgRoot.ownerDocument!.createElementNS(SVG_NS, "image");
+
+          image.setAttribute("width", "100%");
+          image.setAttribute("height", "100%");
           image.setAttribute("href", fileData.dataURL);
           image.setAttribute("preserveAspectRatio", "none");
 
-          if (element.crop || !reuseImages) {
-            image.setAttribute("width", `${uncroppedWidth}`);
-            image.setAttribute("height", `${uncroppedHeight}`);
-          } else {
-            image.setAttribute("width", "100%");
-            image.setAttribute("height", "100%");
-          }
-
           symbol.appendChild(image);
 
-          (root.querySelector("defs") || root).prepend(symbol);
+          root.prepend(symbol);
         }
 
         const use = svgRoot.ownerDocument!.createElementNS(SVG_NS, "use");
@@ -476,23 +449,8 @@ const renderElementToSvg = (
           use.setAttribute("filter", IMAGE_INVERT_FILTER);
         }
 
-        let normalizedCropX = 0;
-        let normalizedCropY = 0;
-
-        if (element.crop) {
-          const { width: uncroppedWidth, height: uncroppedHeight } =
-            getUncroppedWidthAndHeight(element);
-          normalizedCropX =
-            element.crop.x / (element.crop.naturalWidth / uncroppedWidth);
-          normalizedCropY =
-            element.crop.y / (element.crop.naturalHeight / uncroppedHeight);
-        }
-
-        const adjustedCenterX = cx + normalizedCropX;
-        const adjustedCenterY = cy + normalizedCropY;
-
-        use.setAttribute("width", `${width + normalizedCropX}`);
-        use.setAttribute("height", `${height + normalizedCropY}`);
+        use.setAttribute("width", `${width}`);
+        use.setAttribute("height", `${height}`);
         use.setAttribute("opacity", `${opacity}`);
 
         // We first apply `scale` transforms (horizontal/vertical mirroring)
@@ -502,43 +460,21 @@ const renderElementToSvg = (
         // the transformations correctly (the transform-origin was not being
         // applied correctly).
         if (element.scale[0] !== 1 || element.scale[1] !== 1) {
+          const translateX = element.scale[0] !== 1 ? -width : 0;
+          const translateY = element.scale[1] !== 1 ? -height : 0;
           use.setAttribute(
             "transform",
-            `translate(${adjustedCenterX} ${adjustedCenterY}) scale(${
-              element.scale[0]
-            } ${
-              element.scale[1]
-            }) translate(${-adjustedCenterX} ${-adjustedCenterY})`,
+            `scale(${element.scale[0]}, ${element.scale[1]}) translate(${translateX} ${translateY})`,
           );
         }
 
         const g = svgRoot.ownerDocument!.createElementNS(SVG_NS, "g");
-
-        if (element.crop) {
-          const mask = svgRoot.ownerDocument!.createElementNS(SVG_NS, "mask");
-          mask.setAttribute("id", `mask-image-crop-${element.id}`);
-          mask.setAttribute("fill", "#fff");
-          const maskRect = svgRoot.ownerDocument!.createElementNS(
-            SVG_NS,
-            "rect",
-          );
-
-          maskRect.setAttribute("x", `${normalizedCropX}`);
-          maskRect.setAttribute("y", `${normalizedCropY}`);
-          maskRect.setAttribute("width", `${width}`);
-          maskRect.setAttribute("height", `${height}`);
-
-          mask.appendChild(maskRect);
-          root.appendChild(mask);
-          g.setAttribute("mask", `url(#${mask.id})`);
-        }
-
         g.appendChild(use);
         g.setAttribute(
           "transform",
-          `translate(${offsetX - normalizedCropX} ${
-            offsetY - normalizedCropY
-          }) rotate(${degree} ${adjustedCenterX} ${adjustedCenterY})`,
+          `translate(${offsetX || 0} ${
+            offsetY || 0
+          }) rotate(${degree} ${cx} ${cy})`,
         );
 
         if (element.roundness) {

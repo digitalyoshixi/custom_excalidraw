@@ -1,18 +1,13 @@
-import { getNonDeletedElements } from "@excalidraw/element";
-import { LinearElementEditor } from "@excalidraw/element/linearElementEditor";
-import { isLinearElement, isTextElement } from "@excalidraw/element/typeChecks";
-
-import { arrayToMap, KEYS } from "@excalidraw/common";
-
-import { selectGroupsForSelectedElements } from "@excalidraw/element/groups";
-
-import type { ExcalidrawElement } from "@excalidraw/element/types";
-
-import { CaptureUpdateAction } from "../store";
-
-import { selectAllIcon } from "../components/icons";
-
+import { KEYS } from "../keys";
 import { register } from "./register";
+import { selectGroupsForSelectedElements } from "../groups";
+import { getNonDeletedElements, isTextElement } from "../element";
+import type { ExcalidrawElement } from "../element/types";
+import { isLinearElement } from "../element/typeChecks";
+import { LinearElementEditor } from "../element/linearElementEditor";
+import { excludeElementsInFramesFromSelection } from "../scene/selection";
+import { selectAllIcon } from "../components/icons";
+import { StoreAction } from "../store";
 
 export const actionSelectAll = register({
   name: "selectAll",
@@ -25,17 +20,17 @@ export const actionSelectAll = register({
       return false;
     }
 
-    const selectedElementIds = elements
-      .filter(
+    const selectedElementIds = excludeElementsInFramesFromSelection(
+      elements.filter(
         (element) =>
           !element.isDeleted &&
           !(isTextElement(element) && element.containerId) &&
           !element.locked,
-      )
-      .reduce((map: Record<ExcalidrawElement["id"], true>, element) => {
-        map[element.id] = true;
-        return map;
-      }, {});
+      ),
+    ).reduce((map: Record<ExcalidrawElement["id"], true>, element) => {
+      map[element.id] = true;
+      return map;
+    }, {});
 
     return {
       appState: {
@@ -53,10 +48,10 @@ export const actionSelectAll = register({
           // single linear element selected
           Object.keys(selectedElementIds).length === 1 &&
           isLinearElement(elements[0])
-            ? new LinearElementEditor(elements[0], arrayToMap(elements))
+            ? new LinearElementEditor(elements[0])
             : null,
       },
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   keyTest: (event) => event[KEYS.CTRL_OR_CMD] && event.key === KEYS.A,

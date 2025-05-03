@@ -1,16 +1,11 @@
-import { queryByTestId } from "@testing-library/react";
-
-import {
-  COLOR_PALETTE,
-  DEFAULT_ELEMENT_BACKGROUND_PICKS,
-  FONT_FAMILY,
-  STROKE_WIDTH,
-} from "@excalidraw/common";
-
+import React from "react";
 import { Excalidraw } from "../index";
-import { API } from "../tests/helpers/api";
-import { UI } from "../tests/helpers/ui";
+import { queryByTestId } from "@testing-library/react";
 import { render } from "../tests/test-utils";
+import { UI } from "../tests/helpers/ui";
+import { API } from "../tests/helpers/api";
+import { COLOR_PALETTE, DEFAULT_ELEMENT_BACKGROUND_PICKS } from "../colors";
+import { FONT_FAMILY, STROKE_WIDTH } from "../constants";
 
 describe("element locking", () => {
   beforeEach(async () => {

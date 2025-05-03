@@ -1,7 +1,5 @@
 import React from "react";
-
 import type { AppState, SidebarName, SidebarTabName } from "../../types";
-import type { JSX } from "react";
 
 export type SidebarTriggerProps = {
   name: SidebarName;

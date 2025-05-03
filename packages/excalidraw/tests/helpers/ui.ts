@@ -1,29 +1,4 @@
-import { pointFrom, pointRotateRads } from "@excalidraw/math";
-
-import {
-  getCommonBounds,
-  getElementPointsCoords,
-} from "@excalidraw/element/bounds";
-import { cropElement } from "@excalidraw/element/cropElement";
-import {
-  getTransformHandles,
-  getTransformHandlesFromCoords,
-  OMIT_SIDES_FOR_FRAME,
-  OMIT_SIDES_FOR_MULTIPLE_ELEMENTS,
-  type TransformHandle,
-  type TransformHandleDirection,
-} from "@excalidraw/element/transformHandles";
-import {
-  isLinearElement,
-  isFreeDrawElement,
-  isTextElement,
-  isFrameLikeElement,
-} from "@excalidraw/element/typeChecks";
-import { KEYS, arrayToMap, elementCenterPoint } from "@excalidraw/common";
-
-import type { GlobalPoint, LocalPoint, Radians } from "@excalidraw/math";
-
-import type { TransformHandleType } from "@excalidraw/element/transformHandles";
+import type { ToolType } from "../../types";
 import type {
   ExcalidrawElement,
   ExcalidrawLinearElement,
@@ -34,16 +9,32 @@ import type {
   ExcalidrawDiamondElement,
   ExcalidrawTextContainer,
   ExcalidrawTextElementWithContainer,
-  ExcalidrawImageElement,
-} from "@excalidraw/element/types";
-
-import { createTestHook } from "../../components/App";
-import { getTextEditor } from "../queries/dom";
+} from "../../element/types";
+import type { TransformHandleType } from "../../element/transformHandles";
+import {
+  getTransformHandles,
+  getTransformHandlesFromCoords,
+  OMIT_SIDES_FOR_FRAME,
+  OMIT_SIDES_FOR_MULTIPLE_ELEMENTS,
+  type TransformHandle,
+  type TransformHandleDirection,
+} from "../../element/transformHandles";
+import { KEYS } from "../../keys";
 import { act, fireEvent, GlobalTestState, screen } from "../test-utils";
-
+import { mutateElement } from "../../element/mutateElement";
 import { API } from "./api";
-
-import type { ToolType } from "../../types";
+import {
+  isLinearElement,
+  isFreeDrawElement,
+  isTextElement,
+  isFrameLikeElement,
+} from "../../element/typeChecks";
+import { getCommonBounds, getElementPointsCoords } from "../../element/bounds";
+import { getTextEditor } from "../queries/dom";
+import { arrayToMap } from "../../utils";
+import { createTestHook } from "../../components/App";
+import type { GlobalPoint, LocalPoint, Radians } from "../../../math";
+import { pointFrom, pointRotateRads } from "../../../math";
 
 // so that window.h is available when App.tsx is not imported as well.
 createTestHook();
@@ -150,7 +141,7 @@ export class Keyboard {
 const getElementPointForSelection = (
   element: ExcalidrawElement,
 ): GlobalPoint => {
-  const { x, y, width, angle } = element;
+  const { x, y, width, height, angle } = element;
   const target = pointFrom<GlobalPoint>(
     x +
       (isLinearElement(element) || isFreeDrawElement(element) ? 0 : width / 2),
@@ -165,7 +156,7 @@ const getElementPointForSelection = (
       (bounds[1] + bounds[3]) / 2,
     );
   } else {
-    center = elementCenterPoint(element);
+    center = pointFrom(x + width / 2, y + height / 2);
   }
 
   if (isTextElement(element)) {
@@ -179,17 +170,10 @@ export class Pointer {
   public clientX = 0;
   public clientY = 0;
 
-  static activePointers: Pointer[] = [];
-  static resetAll() {
-    Pointer.activePointers.forEach((pointer) => pointer.reset());
-  }
-
   constructor(
     private readonly pointerType: "mouse" | "touch" | "pen",
     private readonly pointerId = 1,
-  ) {
-    Pointer.activePointers.push(this);
-  }
+  ) {}
 
   reset() {
     this.clientX = 0;
@@ -408,10 +392,7 @@ const proxy = <T extends ExcalidrawElement>(
 };
 
 /** Tools that can be used to draw shapes */
-type DrawingToolName = Exclude<
-  ToolType,
-  "lock" | "selection" | "eraser" | "lasso"
->;
+type DrawingToolName = Exclude<ToolType, "lock" | "selection" | "eraser">;
 
 type Element<T extends DrawingToolName> = T extends "line" | "freedraw"
   ? ExcalidrawLinearElement
@@ -525,7 +506,7 @@ export class UI {
 
     if (angle !== 0) {
       act(() => {
-        h.app.scene.mutateElement(origElement, { angle });
+        mutateElement(origElement, { angle });
       });
     }
 
@@ -578,38 +559,6 @@ export class UI {
     keyboardModifiers: KeyboardModifiers = {},
   ) {
     return transform(element, handle, mouseMove, keyboardModifiers);
-  }
-
-  static crop(
-    element: ExcalidrawImageElement,
-    handle: TransformHandleDirection,
-    naturalWidth: number,
-    naturalHeight: number,
-    mouseMove: [deltaX: number, deltaY: number],
-    keepAspectRatio = false,
-  ) {
-    const handleCoords = getTransformHandles(
-      element,
-      h.state.zoom,
-      arrayToMap(h.elements),
-      "mouse",
-      {},
-    )[handle]!;
-
-    const clientX = handleCoords[0] + handleCoords[2] / 2;
-    const clientY = handleCoords[1] + handleCoords[3] / 2;
-
-    const mutations = cropElement(
-      element,
-      handle,
-      naturalWidth,
-      naturalHeight,
-      clientX + mouseMove[0],
-      clientY + mouseMove[1],
-      keepAspectRatio ? element.width / element.height : undefined,
-    );
-
-    API.updateElement(element, mutations);
   }
 
   static rotate(

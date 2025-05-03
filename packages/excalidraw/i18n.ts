@@ -1,10 +1,8 @@
-import { isDevEnv } from "@excalidraw/common";
-
-import type { NestedKeyOf } from "@excalidraw/common/utility-types";
-
-import { useAtomValue, editorJotaiStore, atom } from "./editor-jotai";
 import fallbackLangData from "./locales/en.json";
 import percentages from "./locales/percentages.json";
+import { jotaiScope, jotaiStore } from "./jotai";
+import { atom, useAtomValue } from "jotai";
+import type { NestedKeyOf } from "./utility-types";
 
 const COMPLETION_THRESHOLD = 85;
 
@@ -75,7 +73,7 @@ export const languages: Language[] = [
 ];
 
 const TEST_LANG_CODE = "__test__";
-if (isDevEnv()) {
+if (import.meta.env.DEV) {
   languages.unshift(
     { code: TEST_LANG_CODE, label: "test language" },
     {
@@ -88,6 +86,17 @@ if (isDevEnv()) {
 
 let currentLang: Language = defaultLang;
 let currentLangData = {};
+
+let fallbackCustomLangData = {};
+const langLoaders: LangLdr[] = [];
+export type LangLdr = (langCode: string) => Promise<{}>;
+
+export const registerCustomLangData = (fallbackLangData: {}, ldr: LangLdr) => {
+  if (!langLoaders.includes(ldr)) {
+    fallbackCustomLangData = { ...fallbackLangData, ...fallbackCustomLangData };
+    langLoaders.push(ldr);
+  }
+};
 
 export const setLanguage = async (lang: Language) => {
   currentLang = lang;
@@ -103,9 +112,17 @@ export const setLanguage = async (lang: Language) => {
       console.error(`Failed to load language ${lang.code}:`, error.message);
       currentLangData = fallbackLangData;
     }
+    const auxData = langLoaders.map((fn) => fn(currentLang.code));
+    while (auxData.length > 0) {
+      try {
+        currentLangData = { ...(await auxData.pop()), ...currentLangData };
+      } catch (error: any) {
+        console.error(`Error loading ${lang.code} extra data:`, error.message);
+      }
+    }
   }
 
-  editorJotaiStore.set(editorLangCodeAtom, lang.code);
+  jotaiStore.set(editorLangCodeAtom, lang.code);
 };
 
 export const getLanguage = () => currentLang;
@@ -125,7 +142,9 @@ const findPartsForData = (data: any, parts: string[]) => {
 };
 
 export const t = (
-  path: NestedKeyOf<typeof fallbackLangData>,
+  path:
+    | NestedKeyOf<typeof fallbackLangData>
+    | `${NestedKeyOf<typeof fallbackLangData>}.${string}`,
   replacement?: { [key: string]: string | number } | null,
   fallback?: string,
 ) => {
@@ -140,6 +159,7 @@ export const t = (
   let translation =
     findPartsForData(currentLangData, parts) ||
     findPartsForData(fallbackLangData, parts) ||
+    findPartsForData(fallbackCustomLangData, parts) ||
     fallback;
   if (translation === undefined) {
     const errorMessage = `Can't find translation for ${path}`;
@@ -167,6 +187,6 @@ const editorLangCodeAtom = atom(defaultLang.code);
 // - component is rendered internally by <Excalidraw>, but the component
 //   is memoized w/o being updated on `langCode`, `AppState`, or `UIAppState`
 export const useI18n = () => {
-  const langCode = useAtomValue(editorLangCodeAtom);
+  const langCode = useAtomValue(editorLangCodeAtom, jotaiScope);
   return { t, langCode };
 };

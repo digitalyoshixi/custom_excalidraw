@@ -1,13 +1,11 @@
 import { actionLoadScene, actionShortcuts } from "../../actions";
 import { getShortcutFromShortcutName } from "../../actions/shortcuts";
-import { useTunnels } from "../../context/tunnels";
-import { useUIAppState } from "../../context/ui-appState";
 import { t, useI18n } from "../../i18n";
 import { useDevice, useExcalidrawActionManager } from "../App";
-import { ExcalidrawLogo } from "../ExcalidrawLogo";
+import { useTunnels } from "../../context/tunnels";
 import { HelpIcon, LoadIcon, usersIcon } from "../icons";
-
-import type { JSX } from "react";
+import { useUIAppState } from "../../context/ui-appState";
+import { ExcalidrawLogo } from "../ExcalidrawLogo";
 
 const WelcomeScreenMenuItemContent = ({
   icon,
@@ -78,7 +76,7 @@ const WelcomeScreenMenuItemLink = ({
       className={`welcome-screen-menu-item ${className}`}
       href={href}
       target="_blank"
-      rel="noopener"
+      rel="noreferrer"
     >
       <WelcomeScreenMenuItemContent icon={icon} shortcut={shortcut}>
         {children}

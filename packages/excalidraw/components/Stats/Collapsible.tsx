@@ -9,7 +9,6 @@ interface CollapsibleProps {
   open: boolean;
   openTrigger: () => void;
   children: React.ReactNode;
-  className?: string;
 }
 
 const Collapsible = ({
@@ -17,7 +16,6 @@ const Collapsible = ({
   open,
   openTrigger,
   children,
-  className,
 }: CollapsibleProps) => {
   return (
     <>
@@ -28,7 +26,6 @@ const Collapsible = ({
           justifyContent: "space-between",
           alignItems: "center",
         }}
-        className={className}
         onClick={openTrigger}
       >
         {label}

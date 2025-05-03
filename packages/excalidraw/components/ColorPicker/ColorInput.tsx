@@ -1,18 +1,16 @@
-import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-import { KEYS, getShortcutKey } from "@excalidraw/common";
-
-import { useAtom } from "../../editor-jotai";
+import { getColor } from "./ColorPicker";
+import { useAtom } from "jotai";
+import type { ColorPickerType } from "./colorPickerUtils";
+import { activeColorPickerSectionAtom } from "./colorPickerUtils";
+import { eyeDropperIcon } from "../icons";
+import { jotaiScope } from "../../jotai";
+import { KEYS } from "../../keys";
+import { activeEyeDropperAtom } from "../EyeDropper";
+import clsx from "clsx";
 import { t } from "../../i18n";
 import { useDevice } from "../App";
-import { activeEyeDropperAtom } from "../EyeDropper";
-import { eyeDropperIcon } from "../icons";
-
-import { getColor } from "./ColorPicker";
-import { activeColorPickerSectionAtom } from "./colorPickerUtils";
-
-import type { ColorPickerType } from "./colorPickerUtils";
+import { getShortcutKey } from "../../utils";
 
 interface ColorInputProps {
   color: string;
@@ -59,7 +57,10 @@ export const ColorInput = ({
     }
   }, [activeSection]);
 
-  const [eyeDropperState, setEyeDropperState] = useAtom(activeEyeDropperAtom);
+  const [eyeDropperState, setEyeDropperState] = useAtom(
+    activeEyeDropperAtom,
+    jotaiScope,
+  );
 
   useEffect(() => {
     return () => {

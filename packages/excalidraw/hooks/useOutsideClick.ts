@@ -1,9 +1,8 @@
 import { useEffect } from "react";
-
-import { EVENT } from "@excalidraw/common";
+import { EVENT } from "../constants";
 
 export function useOutsideClick<T extends HTMLElement>(
-  ref: React.RefObject<T | null>,
+  ref: React.RefObject<T>,
   /** if performance is of concern, memoize the callback */
   callback: (event: Event) => void,
   /**

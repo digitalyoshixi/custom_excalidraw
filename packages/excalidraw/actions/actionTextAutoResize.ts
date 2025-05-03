@@ -1,16 +1,11 @@
-import { getFontString } from "@excalidraw/common";
-
-import { newElementWith } from "@excalidraw/element/mutateElement";
-import { measureText } from "@excalidraw/element/textMeasurements";
-
-import { isTextElement } from "@excalidraw/element/typeChecks";
-
+import { isTextElement } from "../element";
+import { newElementWith } from "../element/mutateElement";
+import { measureText } from "../element/textElement";
 import { getSelectedElements } from "../scene";
-import { CaptureUpdateAction } from "../store";
-
-import { register } from "./register";
-
+import { StoreAction } from "../store";
 import type { AppClassProperties } from "../types";
+import { getFontString } from "../utils";
+import { register } from "./register";
 
 export const actionTextAutoResize = register({
   name: "autoResize",
@@ -47,7 +42,7 @@ export const actionTextAutoResize = register({
         }
         return element;
       }),
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
 });

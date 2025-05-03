@@ -1,9 +1,7 @@
 import clsx from "clsx";
-
 import { useTunnels } from "../../context/tunnels";
-import { useUIAppState } from "../../context/ui-appState";
-
 import "./FooterCenter.scss";
+import { useUIAppState } from "../../context/ui-appState";
 
 const FooterCenter = ({ children }: { children?: React.ReactNode }) => {
   const { FooterCenterTunnel } = useTunnels();

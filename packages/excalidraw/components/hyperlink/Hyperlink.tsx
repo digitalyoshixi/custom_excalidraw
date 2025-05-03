@@ -1,5 +1,20 @@
-import { pointFrom, type GlobalPoint } from "@excalidraw/math";
-import clsx from "clsx";
+import type { AppState, ExcalidrawProps, UIAppState } from "../../types";
+import {
+  sceneCoordsToViewportCoords,
+  viewportCoordsToSceneCoords,
+  wrapEvent,
+} from "../../utils";
+import { getEmbedLink, embeddableURLValidator } from "../../element/embeddable";
+import { mutateElement } from "../../element/mutateElement";
+import type {
+  ElementsMap,
+  ExcalidrawEmbeddableElement,
+  NonDeletedExcalidrawElement,
+} from "../../element/types";
+
+import { ToolButton } from "../ToolButton";
+import { FreedrawIcon, TrashIcon } from "../icons";
+import { t } from "../../i18n";
 import {
   useCallback,
   useEffect,
@@ -7,58 +22,26 @@ import {
   useRef,
   useState,
 } from "react";
-
-import { EVENT, HYPERLINK_TOOLTIP_DELAY, KEYS } from "@excalidraw/common";
-
-import { getElementAbsoluteCoords } from "@excalidraw/element/bounds";
-
-import { hitElementBoundingBox } from "@excalidraw/element/collision";
-
-import { isElementLink } from "@excalidraw/element/elementLink";
-
-import {
-  getEmbedLink,
-  embeddableURLValidator,
-} from "@excalidraw/element/embeddable";
-
-import {
-  sceneCoordsToViewportCoords,
-  viewportCoordsToSceneCoords,
-  wrapEvent,
-  isLocalLink,
-  normalizeLink,
-} from "@excalidraw/common";
-
-import { isEmbeddableElement } from "@excalidraw/element/typeChecks";
-
-import type Scene from "@excalidraw/element/Scene";
-
-import type {
-  ElementsMap,
-  ExcalidrawEmbeddableElement,
-  NonDeletedExcalidrawElement,
-} from "@excalidraw/element/types";
-
-import { trackEvent } from "../../analytics";
+import clsx from "clsx";
+import { KEYS } from "../../keys";
+import { EVENT, HYPERLINK_TOOLTIP_DELAY } from "../../constants";
+import { getElementAbsoluteCoords } from "../../element/bounds";
 import { getTooltipDiv, updateTooltipPosition } from "../../components/Tooltip";
-
-import { t } from "../../i18n";
-
-import { useAppProps, useDevice, useExcalidrawAppState } from "../App";
-import { ToolButton } from "../ToolButton";
-import { FreedrawIcon, TrashIcon, elementLinkIcon } from "../icons";
 import { getSelectedElements } from "../../scene";
-
-import { getLinkHandleFromCoords } from "./helpers";
+import { hitElementBoundingBox } from "../../element/collision";
+import { isLocalLink, normalizeLink } from "../../data/url";
 
 import "./Hyperlink.scss";
+import { trackEvent } from "../../analytics";
+import { useAppProps, useExcalidrawAppState } from "../App";
+import { isEmbeddableElement } from "../../element/typeChecks";
+import { getLinkHandleFromCoords } from "./helpers";
+import { pointFrom, type GlobalPoint } from "../../../math";
 
-import type { AppState, ExcalidrawProps, UIAppState } from "../../types";
-
-const POPUP_WIDTH = 380;
-const POPUP_HEIGHT = 42;
-const POPUP_PADDING = 5;
+const CONTAINER_WIDTH = 320;
 const SPACE_BOTTOM = 85;
+const CONTAINER_PADDING = 5;
+const CONTAINER_HEIGHT = 42;
 const AUTO_HIDE_TIMEOUT = 500;
 
 let IS_HYPERLINK_TOOLTIP_VISIBLE = false;
@@ -70,14 +53,14 @@ const embeddableLinkCache = new Map<
 
 export const Hyperlink = ({
   element,
-  scene,
+  elementsMap,
   setAppState,
   onLinkOpen,
   setToast,
   updateEmbedValidationStatus,
 }: {
   element: NonDeletedExcalidrawElement;
-  scene: Scene;
+  elementsMap: ElementsMap;
   setAppState: React.Component<any, AppState>["setState"];
   onLinkOpen: ExcalidrawProps["onLinkOpen"];
   setToast: (
@@ -88,10 +71,8 @@ export const Hyperlink = ({
     status: boolean,
   ) => void;
 }) => {
-  const elementsMap = scene.getNonDeletedElementsMap();
   const appState = useExcalidrawAppState();
   const appProps = useAppProps();
-  const device = useDevice();
 
   const linkVal = element.link || "";
 
@@ -115,7 +96,7 @@ export const Hyperlink = ({
         setAppState({ activeEmbeddable: null });
       }
       if (!link) {
-        scene.mutateElement(element, {
+        mutateElement(element, {
           link: null,
         });
         updateEmbedValidationStatus(element, false);
@@ -127,7 +108,7 @@ export const Hyperlink = ({
           setToast({ message: t("toast.unableToEmbed"), closable: true });
         }
         element.link && embeddableLinkCache.set(element.id, element.link);
-        scene.mutateElement(element, {
+        mutateElement(element, {
           link,
         });
         updateEmbedValidationStatus(element, false);
@@ -145,7 +126,7 @@ export const Hyperlink = ({
           : 1;
         const hasLinkChanged =
           embeddableLinkCache.get(element.id) !== element.link;
-        scene.mutateElement(element, {
+        mutateElement(element, {
           ...(hasLinkChanged
             ? {
                 width:
@@ -170,11 +151,10 @@ export const Hyperlink = ({
         }
       }
     } else {
-      scene.mutateElement(element, { link });
+      mutateElement(element, { link });
     }
   }, [
     element,
-    scene,
     setToast,
     appProps.validateEmbeddable,
     appState.activeEmbeddable,
@@ -189,18 +169,7 @@ export const Hyperlink = ({
   }, [handleSubmit]);
 
   useEffect(() => {
-    if (
-      isEditing &&
-      inputRef?.current &&
-      !(device.viewport.isMobile || device.isTouchScreen)
-    ) {
-      inputRef.current.select();
-    }
-  }, [isEditing, device.viewport.isMobile, device.isTouchScreen]);
-
-  useEffect(() => {
     let timeoutId: number | null = null;
-
     const handlePointerMove = (event: PointerEvent) => {
       if (isEditing) {
         return;
@@ -231,9 +200,12 @@ export const Hyperlink = ({
 
   const handleRemove = useCallback(() => {
     trackEvent("hyperlink", "delete");
-    scene.mutateElement(element, { link: null });
+    mutateElement(element, { link: null });
+    if (isEditing) {
+      inputRef.current!.value = "";
+    }
     setAppState({ showHyperlinkPopup: false });
-  }, [setAppState, element, scene]);
+  }, [setAppState, element, isEditing]);
 
   const onEdit = () => {
     trackEvent("hyperlink", "edit", "popup-ui");
@@ -257,14 +229,19 @@ export const Hyperlink = ({
       style={{
         top: `${y}px`,
         left: `${x}px`,
-        width: POPUP_WIDTH,
-        padding: POPUP_PADDING,
+        width: CONTAINER_WIDTH,
+        padding: CONTAINER_PADDING,
+      }}
+      onClick={() => {
+        if (!element.link && !isEditing) {
+          setAppState({ showHyperlinkPopup: "editor" });
+        }
       }}
     >
       {isEditing ? (
         <input
           className={clsx("excalidraw-hyperlinkContainer-input")}
-          placeholder={t("labels.link.hint")}
+          placeholder="Type or paste your link here"
           ref={inputRef}
           value={inputVal}
           onChange={(event) => setInputVal(event.target.value)}
@@ -325,21 +302,6 @@ export const Hyperlink = ({
             icon={FreedrawIcon}
           />
         )}
-        <ToolButton
-          type="button"
-          title={t("labels.linkToElement")}
-          aria-label={t("labels.linkToElement")}
-          label={t("labels.linkToElement")}
-          onClick={() => {
-            setAppState({
-              openDialog: {
-                name: "elementLinkSelector",
-                sourceElementId: element.id,
-              },
-            });
-          }}
-          icon={elementLinkIcon}
-        />
         {linkVal && !isEmbeddableElement(element) && (
           <ToolButton
             type="button"
@@ -366,7 +328,7 @@ const getCoordsForPopover = (
     { sceneX: x1 + element.width / 2, sceneY: y1 },
     appState,
   );
-  const x = viewportX - appState.offsetLeft - POPUP_WIDTH / 2;
+  const x = viewportX - appState.offsetLeft - CONTAINER_WIDTH / 2;
   const y = viewportY - appState.offsetTop - SPACE_BOTTOM;
   return { x, y };
 };
@@ -376,10 +338,12 @@ export const getContextMenuLabel = (
   appState: UIAppState,
 ) => {
   const selectedElements = getSelectedElements(elements, appState);
-  const label = isEmbeddableElement(selectedElements[0])
-    ? "labels.link.editEmbed"
-    : selectedElements[0]?.link
-    ? "labels.link.edit"
+  const label = selectedElements[0]?.link
+    ? isEmbeddableElement(selectedElements[0])
+      ? "labels.link.editEmbed"
+      : "labels.link.edit"
+    : isEmbeddableElement(selectedElements[0])
+    ? "labels.link.createEmbed"
     : "labels.link.create";
   return label;
 };
@@ -412,9 +376,7 @@ const renderTooltip = (
 
   tooltipDiv.classList.add("excalidraw-tooltip--visible");
   tooltipDiv.style.maxWidth = "20rem";
-  tooltipDiv.textContent = isElementLink(element.link)
-    ? t("labels.link.goToElement")
-    : element.link;
+  tooltipDiv.textContent = element.link;
 
   const [x1, y1, x2, y2] = getElementAbsoluteCoords(element, elementsMap);
 
@@ -488,9 +450,9 @@ const shouldHideLinkPopup = (
 
   if (
     clientX >= popoverX - threshold &&
-    clientX <= popoverX + POPUP_WIDTH + POPUP_PADDING * 2 + threshold &&
+    clientX <= popoverX + CONTAINER_WIDTH + CONTAINER_PADDING * 2 + threshold &&
     clientY >= popoverY - threshold &&
-    clientY <= popoverY + threshold + POPUP_PADDING * 2 + POPUP_HEIGHT
+    clientY <= popoverY + threshold + CONTAINER_PADDING * 2 + CONTAINER_HEIGHT
   ) {
     return false;
   }

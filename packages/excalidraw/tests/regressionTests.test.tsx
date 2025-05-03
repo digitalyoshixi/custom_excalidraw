@@ -1,15 +1,11 @@
 import React from "react";
-import { vi } from "vitest";
-
-import { FONT_FAMILY, CODES, KEYS, reseed } from "@excalidraw/common";
-
-import { setDateTimeForTests } from "@excalidraw/common";
-
-import type { ExcalidrawElement } from "@excalidraw/element/types";
-
+import ReactDOM from "react-dom";
+import type { ExcalidrawElement } from "../element/types";
+import { CODES, KEYS } from "../keys";
 import { Excalidraw } from "../index";
+import { reseed } from "../random";
 import * as StaticScene from "../renderer/staticScene";
-
+import { setDateTimeForTests } from "../utils";
 import { API } from "./helpers/api";
 import { Keyboard, Pointer, UI } from "./helpers/ui";
 import {
@@ -18,8 +14,9 @@ import {
   render,
   screen,
   togglePopover,
-  unmountComponent,
 } from "./test-utils";
+import { FONT_FAMILY } from "../constants";
+import { vi } from "vitest";
 
 const { h } = window;
 
@@ -46,7 +43,8 @@ const checkpoint = (name: string) => {
   );
 };
 beforeEach(async () => {
-  unmountComponent();
+  // Unmount ReactDOM from root
+  ReactDOM.unmountComponentAtNode(document.getElementById("root")!);
 
   localStorage.clear();
   renderStaticScene.mockClear();
@@ -1184,7 +1182,3 @@ it(
     expect(API.getSelectedElements().length).toBe(1);
   },
 );
-
-//
-// DEPRECATED: DO NOT ADD TESTS HERE
-//

@@ -1,12 +1,11 @@
-import throttle from "lodash.throttle";
 import { useEffect } from "react";
-
-import { atom, useAtom } from "../editor-jotai";
+import { atom, useAtom } from "jotai";
+import throttle from "lodash.throttle";
 
 const scrollPositionAtom = atom<number>(0);
 
 export const useScrollPosition = <T extends HTMLElement>(
-  elementRef: React.RefObject<T | null>,
+  elementRef: React.RefObject<T>,
 ) => {
   const [scrollPosition, setScrollPosition] = useAtom(scrollPositionAtom);
 

@@ -1,33 +1,28 @@
 import React, { useEffect, useState } from "react";
-
-import { EVENT } from "@excalidraw/common";
-
-import {
-  DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX,
-  DEFAULT_ELEMENT_STROKE_COLOR_INDEX,
-  KEYS,
-} from "@excalidraw/common";
-
-import type { ExcalidrawElement } from "@excalidraw/element/types";
-
-import type { ColorPaletteCustom } from "@excalidraw/common";
-
-import { useAtom } from "../../editor-jotai";
 import { t } from "../../i18n";
 
-import { CustomColorList } from "./CustomColorList";
-import PickerColorList from "./PickerColorList";
-import PickerHeading from "./PickerHeading";
+import type { ExcalidrawElement } from "../../element/types";
 import { ShadeList } from "./ShadeList";
+
+import PickerColorList from "./PickerColorList";
+import { useAtom } from "jotai";
+import { CustomColorList } from "./CustomColorList";
+import { colorPickerKeyNavHandler } from "./keyboardNavHandlers";
+import PickerHeading from "./PickerHeading";
+import type { ColorPickerType } from "./colorPickerUtils";
 import {
   activeColorPickerSectionAtom,
   getColorNameAndShadeFromColor,
   getMostUsedCustomColors,
   isCustomColor,
 } from "./colorPickerUtils";
-import { colorPickerKeyNavHandler } from "./keyboardNavHandlers";
-
-import type { ColorPickerType } from "./colorPickerUtils";
+import type { ColorPaletteCustom } from "../../colors";
+import {
+  DEFAULT_ELEMENT_BACKGROUND_COLOR_INDEX,
+  DEFAULT_ELEMENT_STROKE_COLOR_INDEX,
+} from "../../colors";
+import { KEYS } from "../../keys";
+import { EVENT } from "../../constants";
 
 interface PickerProps {
   color: string;

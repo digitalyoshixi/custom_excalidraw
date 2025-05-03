@@ -1,19 +1,13 @@
-import { isDevEnv, isShallowEqual, isTestEnv } from "@excalidraw/common";
-
-import { deepCopyElement } from "@excalidraw/element/duplicate";
-
-import { newElementWith } from "@excalidraw/element/mutateElement";
-
-import type { OrderedExcalidrawElement } from "@excalidraw/element/types";
-
-import type { ValueOf } from "@excalidraw/common/utility-types";
-
 import { getDefaultAppState } from "./appState";
 import { AppStateChange, ElementsChange } from "./change";
-
+import { ENV } from "./constants";
+import { newElementWith } from "./element/mutateElement";
+import { deepCopyElement } from "./element/newElement";
+import type { OrderedExcalidrawElement } from "./element/types";
 import { Emitter } from "./emitter";
-
 import type { AppState, ObservedAppState } from "./types";
+import type { ValueOf } from "./utility-types";
+import { isShallowEqual } from "./utils";
 
 // hidden non-enumerable property for runtime checks
 const hiddenObservedAppStateProp = "__observedAppState";
@@ -27,7 +21,6 @@ export const getObservedAppState = (appState: AppState): ObservedAppState => {
     selectedGroupIds: appState.selectedGroupIds,
     editingLinearElementId: appState.editingLinearElement?.elementId || null,
     selectedLinearElementId: appState.selectedLinearElement?.elementId || null,
-    croppingElementId: appState.croppingElementId,
   };
 
   Reflect.defineProperty(observedAppState, hiddenObservedAppStateProp, {
@@ -43,7 +36,7 @@ const isObservedAppState = (
 ): appState is ObservedAppState =>
   !!Reflect.get(appState, hiddenObservedAppStateProp);
 
-export const CaptureUpdateAction = {
+export const StoreAction = {
   /**
    * Immediately undoable.
    *
@@ -52,7 +45,7 @@ export const CaptureUpdateAction = {
    *
    * These updates will _immediately_ make it to the local undo / redo stacks.
    */
-  IMMEDIATELY: "IMMEDIATELY",
+  CAPTURE: "capture",
   /**
    * Never undoable.
    *
@@ -61,22 +54,22 @@ export const CaptureUpdateAction = {
    *
    * These updates will _never_ make it to the local undo / redo stacks.
    */
-  NEVER: "NEVER",
+  UPDATE: "update",
   /**
    * Eventually undoable.
    *
    * Use for updates which should not be captured immediately - likely
    * exceptions which are part of some async multi-step process. Otherwise, all
    * such updates would end up being captured with the next
-   * `CaptureUpdateAction.IMMEDIATELY` - triggered either by the next `updateScene`
+   * `StoreAction.CAPTURE` - triggered either by the next `updateScene`
    * or internally by the editor.
    *
    * These updates will _eventually_ make it to the local undo / redo stacks.
    */
-  EVENTUALLY: "EVENTUALLY",
+  NONE: "none",
 } as const;
 
-export type CaptureUpdateActionType = ValueOf<typeof CaptureUpdateAction>;
+export type StoreActionType = ValueOf<typeof StoreAction>;
 
 /**
  * Represent an increment to the Store.
@@ -139,7 +132,7 @@ export class Store implements IStore {
     [StoreIncrementEvent]
   >();
 
-  private scheduledActions: Set<CaptureUpdateActionType> = new Set();
+  private scheduledActions: Set<StoreActionType> = new Set();
   private _snapshot = Snapshot.empty();
 
   public get snapshot() {
@@ -152,14 +145,14 @@ export class Store implements IStore {
 
   // TODO: Suspicious that this is called so many places. Seems error-prone.
   public shouldCaptureIncrement = () => {
-    this.scheduleAction(CaptureUpdateAction.IMMEDIATELY);
+    this.scheduleAction(StoreAction.CAPTURE);
   };
 
   public shouldUpdateSnapshot = () => {
-    this.scheduleAction(CaptureUpdateAction.NEVER);
+    this.scheduleAction(StoreAction.UPDATE);
   };
 
-  private scheduleAction = (action: CaptureUpdateActionType) => {
+  private scheduleAction = (action: StoreActionType) => {
     this.scheduledActions.add(action);
     this.satisfiesScheduledActionsInvariant();
   };
@@ -170,9 +163,9 @@ export class Store implements IStore {
   ): void => {
     try {
       // Capture has precedence since it also performs update
-      if (this.scheduledActions.has(CaptureUpdateAction.IMMEDIATELY)) {
+      if (this.scheduledActions.has(StoreAction.CAPTURE)) {
         this.captureIncrement(elements, appState);
-      } else if (this.scheduledActions.has(CaptureUpdateAction.NEVER)) {
+      } else if (this.scheduledActions.has(StoreAction.UPDATE)) {
         this.updateSnapshot(elements, appState);
       }
     } finally {
@@ -261,7 +254,7 @@ export class Store implements IStore {
       const message = `There can be at most three store actions scheduled at the same time, but there are "${this.scheduledActions.size}".`;
       console.error(message, this.scheduledActions.values());
 
-      if (isTestEnv() || isDevEnv()) {
+      if (import.meta.env.DEV || import.meta.env.MODE === ENV.TEST) {
         throw new Error(message);
       }
     }

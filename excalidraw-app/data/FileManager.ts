@@ -1,42 +1,29 @@
-import { CaptureUpdateAction } from "@excalidraw/excalidraw";
-import { compressData } from "@excalidraw/excalidraw/data/encode";
-import { newElementWith } from "@excalidraw/element/mutateElement";
-import { isInitializedImageElement } from "@excalidraw/element/typeChecks";
-import { t } from "@excalidraw/excalidraw/i18n";
-
+import { StoreAction } from "../../packages/excalidraw";
+import { compressData } from "../../packages/excalidraw/data/encode";
+import { newElementWith } from "../../packages/excalidraw/element/mutateElement";
+import { isInitializedImageElement } from "../../packages/excalidraw/element/typeChecks";
 import type {
   ExcalidrawElement,
   ExcalidrawImageElement,
   FileId,
   InitializedExcalidrawImageElement,
-} from "@excalidraw/element/types";
+} from "../../packages/excalidraw/element/types";
+import { t } from "../../packages/excalidraw/i18n";
 import type {
   BinaryFileData,
   BinaryFileMetadata,
   ExcalidrawImperativeAPI,
   BinaryFiles,
-} from "@excalidraw/excalidraw/types";
-
-type FileVersion = Required<BinaryFileData>["version"];
+} from "../../packages/excalidraw/types";
 
 export class FileManager {
   /** files being fetched */
   private fetchingFiles = new Map<ExcalidrawImageElement["fileId"], true>();
-  private erroredFiles_fetch = new Map<
-    ExcalidrawImageElement["fileId"],
-    true
-  >();
   /** files being saved */
-  private savingFiles = new Map<
-    ExcalidrawImageElement["fileId"],
-    FileVersion
-  >();
+  private savingFiles = new Map<ExcalidrawImageElement["fileId"], true>();
   /* files already saved to persistent storage */
-  private savedFiles = new Map<ExcalidrawImageElement["fileId"], FileVersion>();
-  private erroredFiles_save = new Map<
-    ExcalidrawImageElement["fileId"],
-    FileVersion
-  >();
+  private savedFiles = new Map<ExcalidrawImageElement["fileId"], true>();
+  private erroredFiles = new Map<ExcalidrawImageElement["fileId"], true>();
 
   private _getFiles;
   private _saveFiles;
@@ -50,8 +37,8 @@ export class FileManager {
       erroredFiles: Map<FileId, true>;
     }>;
     saveFiles: (data: { addedFiles: Map<FileId, BinaryFileData> }) => Promise<{
-      savedFiles: Map<FileId, BinaryFileData>;
-      erroredFiles: Map<FileId, BinaryFileData>;
+      savedFiles: Map<FileId, true>;
+      erroredFiles: Map<FileId, true>;
     }>;
   }) {
     this._getFiles = getFiles;
@@ -59,28 +46,19 @@ export class FileManager {
   }
 
   /**
-   * returns whether file is saved/errored, or being processed
+   * returns whether file is already saved or being processed
    */
-  isFileTracked = (id: FileId) => {
+  isFileHandled = (id: FileId) => {
     return (
       this.savedFiles.has(id) ||
-      this.savingFiles.has(id) ||
       this.fetchingFiles.has(id) ||
-      this.erroredFiles_fetch.has(id) ||
-      this.erroredFiles_save.has(id)
+      this.savingFiles.has(id) ||
+      this.erroredFiles.has(id)
     );
   };
 
-  isFileSavedOrBeingSaved = (file: BinaryFileData) => {
-    const fileVersion = this.getFileVersion(file);
-    return (
-      this.savedFiles.get(file.id) === fileVersion ||
-      this.savingFiles.get(file.id) === fileVersion
-    );
-  };
-
-  getFileVersion = (file: BinaryFileData) => {
-    return file.version ?? 1;
+  isFileSaved = (id: FileId) => {
+    return this.savedFiles.has(id);
   };
 
   saveFiles = async ({
@@ -93,16 +71,13 @@ export class FileManager {
     const addedFiles: Map<FileId, BinaryFileData> = new Map();
 
     for (const element of elements) {
-      const fileData =
-        isInitializedImageElement(element) && files[element.fileId];
-
       if (
-        fileData &&
-        // NOTE if errored during save, won't retry due to this check
-        !this.isFileSavedOrBeingSaved(fileData)
+        isInitializedImageElement(element) &&
+        files[element.fileId] &&
+        !this.isFileHandled(element.fileId)
       ) {
         addedFiles.set(element.fileId, files[element.fileId]);
-        this.savingFiles.set(element.fileId, this.getFileVersion(fileData));
+        this.savingFiles.set(element.fileId, true);
       }
     }
 
@@ -111,12 +86,8 @@ export class FileManager {
         addedFiles,
       });
 
-      for (const [fileId, fileData] of savedFiles) {
-        this.savedFiles.set(fileId, this.getFileVersion(fileData));
-      }
-
-      for (const [fileId, fileData] of erroredFiles) {
-        this.erroredFiles_save.set(fileId, this.getFileVersion(fileData));
+      for (const [fileId] of savedFiles) {
+        this.savedFiles.set(fileId, true);
       }
 
       return {
@@ -150,10 +121,10 @@ export class FileManager {
       const { loadedFiles, erroredFiles } = await this._getFiles(ids);
 
       for (const file of loadedFiles) {
-        this.savedFiles.set(file.id, this.getFileVersion(file));
+        this.savedFiles.set(file.id, true);
       }
       for (const [fileId] of erroredFiles) {
-        this.erroredFiles_fetch.set(fileId, true);
+        this.erroredFiles.set(fileId, true);
       }
 
       return { loadedFiles, erroredFiles };
@@ -189,7 +160,7 @@ export class FileManager {
   ): element is InitializedExcalidrawImageElement => {
     return (
       isInitializedImageElement(element) &&
-      this.savedFiles.has(element.fileId) &&
+      this.isFileSaved(element.fileId) &&
       element.status === "pending"
     );
   };
@@ -198,8 +169,7 @@ export class FileManager {
     this.fetchingFiles.clear();
     this.savingFiles.clear();
     this.savedFiles.clear();
-    this.erroredFiles_fetch.clear();
-    this.erroredFiles_save.clear();
+    this.erroredFiles.clear();
   }
 }
 
@@ -269,6 +239,6 @@ export const updateStaleImageStatuses = (params: {
         }
         return element;
       }),
-    captureUpdate: CaptureUpdateAction.NEVER,
+    storeAction: StoreAction.UPDATE,
   });
 };

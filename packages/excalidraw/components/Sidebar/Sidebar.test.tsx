@@ -1,8 +1,5 @@
 import React from "react";
-import { vi } from "vitest";
-
-import { DEFAULT_SIDEBAR } from "@excalidraw/common";
-
+import { DEFAULT_SIDEBAR } from "../../constants";
 import { Excalidraw, Sidebar } from "../../index";
 import {
   act,
@@ -13,7 +10,7 @@ import {
   waitFor,
   withExcalidrawDimensions,
 } from "../../tests/test-utils";
-
+import { vi } from "vitest";
 import {
   assertExcalidrawWithSidebar,
   assertSidebarDockButton,

@@ -1,38 +1,30 @@
 import {
+  isTextElement,
+  isExcalidrawElement,
+  redrawTextBoundingBox,
+} from "../element";
+import { CODES, KEYS } from "../keys";
+import { t } from "../i18n";
+import { register } from "./register";
+import { newElementWith } from "../element/mutateElement";
+import {
   DEFAULT_FONT_SIZE,
   DEFAULT_FONT_FAMILY,
   DEFAULT_TEXT_ALIGN,
-  CODES,
-  KEYS,
-  getLineHeight,
-} from "@excalidraw/common";
-
-import { newElementWith } from "@excalidraw/element/mutateElement";
-
+} from "../constants";
+import { getBoundTextElement } from "../element/textElement";
 import {
   hasBoundTextElement,
   canApplyRoundnessTypeToElement,
   getDefaultRoundnessTypeForElement,
   isFrameLikeElement,
   isArrowElement,
-  isExcalidrawElement,
-  isTextElement,
-} from "@excalidraw/element/typeChecks";
-
-import {
-  getBoundTextElement,
-  redrawTextBoundingBox,
-} from "@excalidraw/element/textElement";
-
-import type { ExcalidrawTextElement } from "@excalidraw/element/types";
-
-import { paintIcon } from "../components/icons";
-
-import { t } from "../i18n";
+} from "../element/typeChecks";
 import { getSelectedElements } from "../scene";
-import { CaptureUpdateAction } from "../store";
-
-import { register } from "./register";
+import type { ExcalidrawTextElement } from "../element/types";
+import { paintIcon } from "../components/icons";
+import { StoreAction } from "../store";
+import { getLineHeight } from "../fonts";
 
 // `copiedStyles` is exported only for tests.
 export let copiedStyles: string = "{}";
@@ -61,7 +53,7 @@ export const actionCopyStyles = register({
         ...appState,
         toast: { message: t("toast.copyStyles") },
       },
-      captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      storeAction: StoreAction.NONE,
     };
   },
   keyTest: (event) =>
@@ -78,7 +70,7 @@ export const actionPasteStyles = register({
     const pastedElement = elementsCopied[0];
     const boundTextElement = elementsCopied[1];
     if (!isExcalidrawElement(pastedElement)) {
-      return { elements, captureUpdate: CaptureUpdateAction.EVENTUALLY };
+      return { elements, storeAction: StoreAction.NONE };
     }
 
     const selectedElements = getSelectedElements(elements, appState, {
@@ -139,8 +131,11 @@ export const actionPasteStyles = register({
                     element.id === newElement.containerId,
                 ) || null;
             }
-
-            redrawTextBoundingBox(newElement, container, app.scene);
+            redrawTextBoundingBox(
+              newElement,
+              container,
+              app.scene.getNonDeletedElementsMap(),
+            );
           }
 
           if (
@@ -164,7 +159,7 @@ export const actionPasteStyles = register({
         }
         return element;
       }),
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      storeAction: StoreAction.CAPTURE,
     };
   },
   keyTest: (event) =>

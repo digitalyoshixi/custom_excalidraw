@@ -1,19 +1,16 @@
-import clsx from "clsx";
-
 import { getClientColor } from "../clients";
 import { Avatar } from "../components/Avatar";
+import type { GoToCollaboratorComponentProps } from "../components/UserList";
 import {
   eyeIcon,
   microphoneIcon,
   microphoneMutedIcon,
 } from "../components/icons";
 import { t } from "../i18n";
-import { CaptureUpdateAction } from "../store";
-
-import { register } from "./register";
-
-import type { GoToCollaboratorComponentProps } from "../components/UserList";
+import { StoreAction } from "../store";
 import type { Collaborator } from "../types";
+import { register } from "./register";
+import clsx from "clsx";
 
 export const actionGoToCollaborator = register({
   name: "goToCollaborator",
@@ -31,7 +28,7 @@ export const actionGoToCollaborator = register({
           ...appState,
           userToFollow: null,
         },
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+        storeAction: StoreAction.NONE,
       };
     }
 
@@ -45,7 +42,7 @@ export const actionGoToCollaborator = register({
         // Close mobile menu
         openMenu: appState.openMenu === "canvas" ? null : appState.openMenu,
       },
-      captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      storeAction: StoreAction.NONE,
     };
   },
   PanelComponent: ({ updateData, data, appState }) => {

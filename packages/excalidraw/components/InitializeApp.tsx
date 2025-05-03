@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
 
-import type { Theme } from "@excalidraw/element/types";
-
-import { defaultLang, languages, setLanguage } from "../i18n";
-
 import { LoadingMessage } from "./LoadingMessage";
-
 import type { Language } from "../i18n";
+import { defaultLang, languages, setLanguage } from "../i18n";
+import type { Theme } from "../element/types";
 
 interface Props {
   langCode: Language["code"];

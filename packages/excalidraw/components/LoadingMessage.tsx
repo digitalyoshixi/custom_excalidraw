@@ -1,13 +1,9 @@
-import clsx from "clsx";
-import { useState, useEffect } from "react";
-
-import { THEME } from "@excalidraw/common";
-
-import type { Theme } from "@excalidraw/element/types";
-
 import { t } from "../i18n";
-
+import { useState, useEffect } from "react";
 import Spinner from "./Spinner";
+import clsx from "clsx";
+import { THEME } from "../constants";
+import type { Theme } from "../element/types";
 
 export const LoadingMessage: React.FC<{ delay?: number; theme?: Theme }> = ({
   delay,

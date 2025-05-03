@@ -30,8 +30,6 @@ export {
   actionToggleTheme,
 } from "./actionCanvas";
 
-export { actionSetEmbeddableAsActiveTool } from "./actionEmbeddable";
-
 export { actionFinalize } from "./actionFinalize";
 
 export {
@@ -90,5 +88,3 @@ export { actionToggleElementLock } from "./actionElementLock";
 export { actionToggleLinearEditor } from "./actionLinearEditor";
 
 export { actionToggleSearchMenu } from "./actionToggleSearchMenu";
-
-export { actionToggleCropEditor } from "./actionCropEditor";

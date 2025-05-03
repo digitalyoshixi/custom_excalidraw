@@ -6,20 +6,6 @@ import React, {
   useCallback,
   type KeyboardEventHandler,
 } from "react";
-
-import { type FontFamilyValues } from "@excalidraw/element/types";
-
-import {
-  arrayToList,
-  debounce,
-  FONT_FAMILY,
-  getFontFamilyString,
-} from "@excalidraw/common";
-
-import type { ValueOf } from "@excalidraw/common/utility-types";
-
-import { Fonts } from "../../fonts";
-import { t } from "../../i18n";
 import { useApp, useAppProps, useExcalidrawContainer } from "../App";
 import { PropertiesPopover } from "../PropertiesPopover";
 import { QuickSearch } from "../QuickSearch";
@@ -29,16 +15,12 @@ import DropdownMenuItem, {
   DropDownMenuItemBadgeType,
   DropDownMenuItemBadge,
 } from "../dropdownMenu/DropdownMenuItem";
-import {
-  FontFamilyCodeIcon,
-  FontFamilyHeadingIcon,
-  FontFamilyNormalIcon,
-  FreedrawIcon,
-} from "../icons";
-
+import { type FontFamilyValues } from "../../element/types";
+import { arrayToList, debounce, getFontFamilyString } from "../../utils";
+import { t } from "../../i18n";
 import { fontPickerKeyHandler } from "./keyboardNavHandlers";
-
-import type { JSX } from "react";
+import { Fonts } from "../../fonts";
+import type { ValueOf } from "../../utility-types";
 
 export interface FontDescriptor {
   value: number;
@@ -61,24 +43,6 @@ interface FontPickerListProps {
   onClose: () => void;
 }
 
-const getFontFamilyIcon = (fontFamily: FontFamilyValues): JSX.Element => {
-  switch (fontFamily) {
-    case FONT_FAMILY.Excalifont:
-    case FONT_FAMILY.Virgil:
-      return FreedrawIcon;
-    case FONT_FAMILY.Nunito:
-    case FONT_FAMILY.Helvetica:
-      return FontFamilyNormalIcon;
-    case FONT_FAMILY["Lilita One"]:
-      return FontFamilyHeadingIcon;
-    case FONT_FAMILY["Comic Shanns"]:
-    case FONT_FAMILY.Cascadia:
-      return FontFamilyCodeIcon;
-    default:
-      return FontFamilyNormalIcon;
-  }
-};
-
 export const FontPickerList = React.memo(
   ({
     selectedFontFamily,
@@ -98,14 +62,12 @@ export const FontPickerList = React.memo(
     const allFonts = useMemo(
       () =>
         Array.from(Fonts.registered.entries())
-          .filter(
-            ([_, { metadata }]) => !metadata.serverSide && !metadata.fallback,
-          )
-          .map(([familyId, { metadata, fontFaces }]) => {
+          .filter(([_, { metadata }]) => !metadata.serverSide)
+          .map(([familyId, { metadata, fonts }]) => {
             const fontDescriptor = {
               value: familyId,
-              icon: getFontFamilyIcon(familyId),
-              text: fontFaces[0]?.fontFace?.family ?? "Unknown",
+              icon: metadata.icon,
+              text: fonts[0].fontFace.family,
             };
 
             if (metadata.deprecated) {
@@ -127,7 +89,7 @@ export const FontPickerList = React.memo(
     );
 
     const sceneFamilies = useMemo(
-      () => new Set(fonts.getSceneFamilies()),
+      () => new Set(fonts.getSceneFontFamilies()),
       // cache per selected font family, so hover re-render won't mess it up
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [selectedFontFamily],

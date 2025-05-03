@@ -1,30 +1,23 @@
 import React, { useEffect, useRef } from "react";
-
-import {
-  CURSOR_TYPE,
-  isShallowEqual,
-  sceneCoordsToViewportCoords,
-} from "@excalidraw/common";
-
-import type {
-  NonDeletedExcalidrawElement,
-  NonDeletedSceneElementsMap,
-} from "@excalidraw/element/types";
-
+import { isShallowEqual, sceneCoordsToViewportCoords } from "../../utils";
+import { CURSOR_TYPE } from "../../constants";
 import { t } from "../../i18n";
-import { isRenderThrottlingEnabled } from "../../reactUtils";
-import { renderInteractiveScene } from "../../renderer/interactiveScene";
-
+import type { DOMAttributes } from "react";
+import type { AppState, Device, InteractiveCanvasAppState } from "../../types";
 import type {
   InteractiveCanvasRenderConfig,
   RenderableElementsMap,
   RenderInteractiveSceneCallback,
 } from "../../scene/types";
-import type { AppState, Device, InteractiveCanvasAppState } from "../../types";
-import type { DOMAttributes } from "react";
+import type {
+  NonDeletedExcalidrawElement,
+  NonDeletedSceneElementsMap,
+} from "../../element/types";
+import { isRenderThrottlingEnabled } from "../../reactUtils";
+import { renderInteractiveScene } from "../../renderer/interactiveScene";
 
 type InteractiveCanvasProps = {
-  containerRef: React.RefObject<HTMLDivElement | null>;
+  containerRef: React.RefObject<HTMLDivElement>;
   canvas: HTMLCanvasElement | null;
   elementsMap: RenderableElementsMap;
   visibleElements: readonly NonDeletedExcalidrawElement[];
@@ -34,7 +27,6 @@ type InteractiveCanvasProps = {
   selectionNonce: number | undefined;
   scale: number;
   appState: InteractiveCanvasAppState;
-  renderScrollbars: boolean;
   device: Device;
   renderInteractiveSceneCallback: (
     data: RenderInteractiveSceneCallback,
@@ -144,7 +136,7 @@ const InteractiveCanvas = (props: InteractiveCanvasProps) => {
           remotePointerUsernames,
           remotePointerUserStates,
           selectionColor,
-          renderScrollbars: props.renderScrollbars,
+          renderScrollbars: false,
         },
         device: props.device,
         callback: props.renderInteractiveSceneCallback,
@@ -190,7 +182,6 @@ const getRelevantAppStateProps = (
   width: appState.width,
   height: appState.height,
   viewModeEnabled: appState.viewModeEnabled,
-  openDialog: appState.openDialog,
   editingGroupId: appState.editingGroupId,
   editingLinearElement: appState.editingLinearElement,
   selectedElementIds: appState.selectedElementIds,
@@ -212,8 +203,6 @@ const getRelevantAppStateProps = (
   snapLines: appState.snapLines,
   zenModeEnabled: appState.zenModeEnabled,
   editingTextElement: appState.editingTextElement,
-  isCropping: appState.isCropping,
-  croppingElementId: appState.croppingElementId,
   searchMatches: appState.searchMatches,
 });
 
@@ -231,8 +220,7 @@ const areEqual = (
     // on appState)
     prevProps.elementsMap !== nextProps.elementsMap ||
     prevProps.visibleElements !== nextProps.visibleElements ||
-    prevProps.selectedElements !== nextProps.selectedElements ||
-    prevProps.renderScrollbars !== nextProps.renderScrollbars
+    prevProps.selectedElements !== nextProps.selectedElements
   ) {
     return false;
   }

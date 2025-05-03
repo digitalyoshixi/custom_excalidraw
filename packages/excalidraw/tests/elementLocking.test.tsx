@@ -1,16 +1,15 @@
 import React from "react";
-
-import { KEYS } from "@excalidraw/common";
-
+import ReactDOM from "react-dom";
+import { Excalidraw } from "../index";
+import { render } from "../tests/test-utils";
+import { Keyboard, Pointer, UI } from "../tests/helpers/ui";
+import { KEYS } from "../keys";
+import { API } from "../tests/helpers/api";
 import { actionSelectAll } from "../actions";
 import { t } from "../i18n";
-import { Excalidraw } from "../index";
+import { mutateElement } from "../element/mutateElement";
 
-import { API } from "../tests/helpers/api";
-import { Keyboard, Pointer, UI } from "../tests/helpers/ui";
-import { render, unmountComponent } from "../tests/test-utils";
-
-unmountComponent();
+ReactDOM.unmountComponentAtNode(document.getElementById("root")!);
 
 const mouse = new Pointer("mouse");
 const h = window.h;
@@ -296,7 +295,7 @@ describe("element locking", () => {
       height: textSize,
       containerId: container.id,
     });
-    h.app.scene.mutateElement(container, {
+    mutateElement(container, {
       boundElements: [{ id: text.id, type: "text" }],
     });
 
@@ -337,7 +336,7 @@ describe("element locking", () => {
       containerId: container.id,
       locked: true,
     });
-    h.app.scene.mutateElement(container, {
+    mutateElement(container, {
       boundElements: [{ id: text.id, type: "text" }],
     });
     API.setElements([container, text]);
@@ -371,7 +370,7 @@ describe("element locking", () => {
       containerId: container.id,
       locked: true,
     });
-    h.app.scene.mutateElement(container, {
+    mutateElement(container, {
       boundElements: [{ id: text.id, type: "text" }],
     });
     API.setElements([container, text]);

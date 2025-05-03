@@ -1,13 +1,12 @@
-import { CODES, KEYS } from "@excalidraw/common";
-
 import { eyeIcon } from "../components/icons";
-import { CaptureUpdateAction } from "../store";
-
+import { CODES, KEYS } from "../keys";
+import { StoreAction } from "../store";
 import { register } from "./register";
 
 export const actionToggleViewMode = register({
   name: "viewMode",
   label: "labels.viewMode",
+  paletteName: "Toggle view mode",
   icon: eyeIcon,
   viewMode: true,
   trackEvent: {
@@ -20,7 +19,7 @@ export const actionToggleViewMode = register({
         ...appState,
         viewModeEnabled: !this.checked!(appState),
       },
-      captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      storeAction: StoreAction.NONE,
     };
   },
   checked: (appState) => appState.viewModeEnabled,

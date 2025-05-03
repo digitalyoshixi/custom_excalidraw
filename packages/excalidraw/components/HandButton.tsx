@@ -1,11 +1,9 @@
+import "./ToolIcon.scss";
+
 import clsx from "clsx";
-
-import { KEYS } from "@excalidraw/common";
-
 import { ToolButton } from "./ToolButton";
 import { handIcon } from "./icons";
-
-import "./ToolIcon.scss";
+import { KEYS } from "../keys";
 
 type LockIconProps = {
   title?: string;

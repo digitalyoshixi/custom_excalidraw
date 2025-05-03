@@ -1,7 +1,5 @@
 import clsx from "clsx";
 
-import type { JSX } from "react";
-
 export const ButtonIconCycle = <T extends any>({
   options,
   value,

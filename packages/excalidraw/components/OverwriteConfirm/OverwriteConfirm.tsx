@@ -1,15 +1,15 @@
 import React from "react";
+import { useAtom } from "jotai";
 
 import { useTunnels } from "../../context/tunnels";
-import { useAtom } from "../../editor-jotai";
+import { jotaiScope } from "../../jotai";
 import { Dialog } from "../Dialog";
-import { FilledButton } from "../FilledButton";
 import { withInternalFallback } from "../hoc/withInternalFallback";
-import { alertTriangleIcon } from "../icons";
-
-import { Actions, Action } from "./OverwriteConfirmActions";
 import { overwriteConfirmStateAtom } from "./OverwriteConfirmState";
 
+import { FilledButton } from "../FilledButton";
+import { alertTriangleIcon } from "../icons";
+import { Actions, Action } from "./OverwriteConfirmActions";
 import "./OverwriteConfirm.scss";
 
 export type OverwriteConfirmDialogProps = {
@@ -23,6 +23,7 @@ const OverwriteConfirmDialog = Object.assign(
       const { OverwriteConfirmDialogTunnel } = useTunnels();
       const [overwriteConfirmState, setState] = useAtom(
         overwriteConfirmStateAtom,
+        jotaiScope,
       );
 
       if (!overwriteConfirmState.active) {

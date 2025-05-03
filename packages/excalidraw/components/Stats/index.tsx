@@ -1,44 +1,34 @@
-import { round } from "@excalidraw/math";
-import clsx from "clsx";
-import throttle from "lodash.throttle";
 import { useEffect, useMemo, useState, memo } from "react";
-
-import { STATS_PANELS } from "@excalidraw/common";
-import { getCommonBounds } from "@excalidraw/element/bounds";
-import { getUncroppedWidthAndHeight } from "@excalidraw/element/cropElement";
-import { isElbowArrow, isImageElement } from "@excalidraw/element/typeChecks";
-
-import { frameAndChildrenSelectedTogether } from "@excalidraw/element/frame";
-
-import { elementsAreInSameGroup } from "@excalidraw/element/groups";
-
-import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
-
+import { getCommonBounds } from "../../element/bounds";
+import type { NonDeletedExcalidrawElement } from "../../element/types";
 import { t } from "../../i18n";
-import { isGridModeEnabled } from "../../snapping";
-import { useExcalidrawAppState, useExcalidrawSetAppState } from "../App";
-import { Island } from "../Island";
-import { CloseIcon } from "../icons";
-
-import Angle from "./Angle";
-import CanvasGrid from "./CanvasGrid";
-import Collapsible from "./Collapsible";
-import Dimension from "./Dimension";
-import FontSize from "./FontSize";
-import MultiAngle from "./MultiAngle";
-import MultiDimension from "./MultiDimension";
-import MultiFontSize from "./MultiFontSize";
-import MultiPosition from "./MultiPosition";
-import Position from "./Position";
-import { getAtomicUnits } from "./utils";
-
-import "./Stats.scss";
-
 import type {
   AppClassProperties,
   AppState,
   ExcalidrawProps,
 } from "../../types";
+import { CloseIcon } from "../icons";
+import { Island } from "../Island";
+import { throttle } from "lodash";
+import Dimension from "./Dimension";
+import Angle from "./Angle";
+import FontSize from "./FontSize";
+import MultiDimension from "./MultiDimension";
+import { elementsAreInSameGroup } from "../../groups";
+import MultiAngle from "./MultiAngle";
+import MultiFontSize from "./MultiFontSize";
+import Position from "./Position";
+import MultiPosition from "./MultiPosition";
+import Collapsible from "./Collapsible";
+import { useExcalidrawAppState, useExcalidrawSetAppState } from "../App";
+import { getAtomicUnits } from "./utils";
+import { STATS_PANELS } from "../../constants";
+import { isElbowArrow } from "../../element/typeChecks";
+import CanvasGrid from "./CanvasGrid";
+import clsx from "clsx";
+
+import "./Stats.scss";
+import { isGridModeEnabled } from "../../snapping";
 
 interface StatsProps {
   app: AppClassProperties;
@@ -138,13 +128,6 @@ export const StatsInner = memo(
     const multipleElements =
       selectedElements.length > 1 ? selectedElements : null;
 
-    const cropMode =
-      appState.croppingElementId && isImageElement(singleElement);
-
-    const unCroppedDimension = cropMode
-      ? getUncroppedWidthAndHeight(singleElement)
-      : null;
-
     const [sceneDimension, setSceneDimension] = useState<{
       width: number;
       height: number;
@@ -177,10 +160,6 @@ export const StatsInner = memo(
     const atomicUnits = useMemo(() => {
       return getAtomicUnits(selectedElements, appState);
     }, [selectedElements, appState]);
-
-    const _frameAndChildrenSelectedTogether = useMemo(() => {
-      return frameAndChildrenSelectedTogether(selectedElements);
-    }, [selectedElements]);
 
     return (
       <div className="exc-stats">
@@ -238,7 +217,7 @@ export const StatsInner = memo(
             {renderCustomStats?.(elements, appState)}
           </Collapsible>
 
-          {!_frameAndChildrenSelectedTogether && selectedElements.length > 0 && (
+          {selectedElements.length > 0 && (
             <div
               id="elementStats"
               style={{
@@ -265,38 +244,8 @@ export const StatsInner = memo(
                 <StatsRows>
                   {singleElement && (
                     <>
-                      {cropMode && (
-                        <StatsRow heading>
-                          {t("labels.unCroppedDimension")}
-                        </StatsRow>
-                      )}
-
-                      {appState.croppingElementId &&
-                        isImageElement(singleElement) &&
-                        unCroppedDimension && (
-                          <StatsRow columns={2}>
-                            <div>{t("stats.width")}</div>
-                            <div>{round(unCroppedDimension.width, 2)}</div>
-                          </StatsRow>
-                        )}
-
-                      {appState.croppingElementId &&
-                        isImageElement(singleElement) &&
-                        unCroppedDimension && (
-                          <StatsRow columns={2}>
-                            <div>{t("stats.height")}</div>
-                            <div>{round(unCroppedDimension.height, 2)}</div>
-                          </StatsRow>
-                        )}
-
-                      <StatsRow
-                        heading
-                        data-testid="stats-element-type"
-                        style={{ margin: "0.3125rem 0" }}
-                      >
-                        {appState.croppingElementId
-                          ? t("labels.imageCropping")
-                          : t(`element.${singleElement.type}`)}
+                      <StatsRow heading data-testid="stats-element-type">
+                        {t(`element.${singleElement.type}`)}
                       </StatsRow>
 
                       <StatsRow>
@@ -438,8 +387,7 @@ export const StatsInner = memo(
       prev.selectedElements === next.selectedElements &&
       prev.appState.stats.panels === next.appState.stats.panels &&
       prev.gridModeEnabled === next.gridModeEnabled &&
-      prev.appState.gridStep === next.appState.gridStep &&
-      prev.appState.croppingElementId === next.appState.croppingElementId
+      prev.appState.gridStep === next.appState.gridStep
     );
   },
 );

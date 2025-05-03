@@ -1,9 +1,8 @@
+import type React from "react";
 import type {
   ExcalidrawElement,
   OrderedExcalidrawElement,
-} from "@excalidraw/element/types";
-
-import type { CaptureUpdateActionType } from "../store";
+} from "../element/types";
 import type {
   AppClassProperties,
   AppState,
@@ -11,7 +10,8 @@ import type {
   BinaryFiles,
   UIAppState,
 } from "../types";
-import type React from "react";
+import type { MarkOptional } from "../utility-types";
+import type { StoreActionType } from "../store";
 
 export type ActionSource =
   | "ui"
@@ -24,9 +24,12 @@ export type ActionSource =
 export type ActionResult =
   | {
       elements?: readonly ExcalidrawElement[] | null;
-      appState?: Partial<AppState> | null;
+      appState?: MarkOptional<
+        AppState,
+        "offsetTop" | "offsetLeft" | "width" | "height"
+      > | null;
       files?: BinaryFiles | null;
-      captureUpdate: CaptureUpdateActionType;
+      storeAction: StoreActionType;
       replaceFiles?: boolean;
     }
   | false;
@@ -38,10 +41,24 @@ type ActionFn = (
   app: AppClassProperties,
 ) => ActionResult | Promise<ActionResult>;
 
+// Return `true` *unless* `Action` should be disabled
+// given `elements`, `appState`, and optionally `data`.
+export type ActionPredicateFn = (
+  action: Action,
+  elements: readonly ExcalidrawElement[],
+  appState: AppState,
+  app: AppClassProperties,
+  data?: Record<string, any>,
+) => boolean;
+
 export type UpdaterFn = (res: ActionResult) => void;
 export type ActionFilterFn = (action: Action) => void;
 
+export const makeCustomActionName = (name: string) =>
+  `custom.${name}` as CustomActionName;
+export type CustomActionName = `custom.${string}`;
 export type ActionName =
+  | CustomActionName
   | "copy"
   | "cut"
   | "paste"
@@ -135,13 +152,7 @@ export type ActionName =
   | "commandPalette"
   | "autoResize"
   | "elementStats"
-  | "searchMenu"
-  | "copyElementLink"
-  | "linkToElement"
-  | "cropEditor"
-  | "wrapSelectionInFrame"
-  | "toggleLassoTool"
-  | "toggleShapeSwitch";
+  | "searchMenu";
 
 export type PanelComponentProps = {
   elements: readonly ExcalidrawElement[];
@@ -182,6 +193,7 @@ export interface Action {
     appState: AppState,
     appProps: ExcalidrawProps,
     app: AppClassProperties,
+    data?: Record<string, any>,
   ) => boolean;
   checked?: (appState: Readonly<AppState>) => boolean;
   trackEvent:
@@ -196,8 +208,7 @@ export interface Action {
           | "menu"
           | "collab"
           | "hyperlink"
-          | "search_menu"
-          | "shape_switch";
+          | "search_menu";
         action?: string;
         predicate?: (
           appState: Readonly<AppState>,

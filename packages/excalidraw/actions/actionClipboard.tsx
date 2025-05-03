@@ -1,8 +1,5 @@
-import { isTextElement } from "@excalidraw/element/typeChecks";
-import { getTextFromElements } from "@excalidraw/element/textElement";
-
-import { CODES, KEYS, isFirefox } from "@excalidraw/common";
-
+import { CODES, KEYS } from "../keys";
+import { register } from "./register";
 import {
   copyTextToSystemClipboard,
   copyToClipboard,
@@ -11,14 +8,13 @@ import {
   probablySupportsClipboardWriteText,
   readSystemClipboard,
 } from "../clipboard";
-import { DuplicateIcon, cutIcon, pngIcon, svgIcon } from "../components/icons";
-import { exportCanvas, prepareElementsForExport } from "../data/index";
-import { t } from "../i18n";
-
-import { CaptureUpdateAction } from "../store";
-
 import { actionDeleteSelected } from "./actionDeleteSelected";
-import { register } from "./register";
+import { exportCanvas, prepareElementsForExport } from "../data/index";
+import { getTextFromElements, isTextElement } from "../element";
+import { t } from "../i18n";
+import { isFirefox } from "../constants";
+import { DuplicateIcon, cutIcon, pngIcon, svgIcon } from "../components/icons";
+import { StoreAction } from "../store";
 
 export const actionCopy = register({
   name: "copy",
@@ -36,7 +32,7 @@ export const actionCopy = register({
       await copyToClipboard(elementsToCopy, app.files, event);
     } catch (error: any) {
       return {
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+        storeAction: StoreAction.NONE,
         appState: {
           ...appState,
           errorMessage: error.message,
@@ -45,7 +41,7 @@ export const actionCopy = register({
     }
 
     return {
-      captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      storeAction: StoreAction.NONE,
     };
   },
   // don't supply a shortcut since we handle this conditionally via onCopy event
@@ -71,7 +67,7 @@ export const actionPaste = register({
 
       if (isFirefox) {
         return {
-          captureUpdate: CaptureUpdateAction.EVENTUALLY,
+          storeAction: StoreAction.NONE,
           appState: {
             ...appState,
             errorMessage: t("hints.firefox_clipboard_write"),
@@ -80,7 +76,7 @@ export const actionPaste = register({
       }
 
       return {
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+        storeAction: StoreAction.NONE,
         appState: {
           ...appState,
           errorMessage: t("errors.asyncPasteFailedOnRead"),
@@ -93,7 +89,7 @@ export const actionPaste = register({
     } catch (error: any) {
       console.error(error);
       return {
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+        storeAction: StoreAction.NONE,
         appState: {
           ...appState,
           errorMessage: t("errors.asyncPasteFailedOnParse"),
@@ -102,7 +98,7 @@ export const actionPaste = register({
     }
 
     return {
-      captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      storeAction: StoreAction.NONE,
     };
   },
   // don't supply a shortcut since we handle this conditionally via onCopy event
@@ -129,7 +125,7 @@ export const actionCopyAsSvg = register({
   perform: async (elements, appState, _data, app) => {
     if (!app.canvas) {
       return {
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+        storeAction: StoreAction.NONE,
       };
     }
 
@@ -151,35 +147,17 @@ export const actionCopyAsSvg = register({
           name: app.getName(),
         },
       );
-
-      const selectedElements = app.scene.getSelectedElements({
-        selectedElementIds: appState.selectedElementIds,
-        includeBoundTextElement: true,
-        includeElementsInFrames: true,
-      });
-
       return {
-        appState: {
-          toast: {
-            message: t("toast.copyToClipboardAsSvg", {
-              exportSelection: selectedElements.length
-                ? t("toast.selection")
-                : t("toast.canvas"),
-              exportColorScheme: appState.exportWithDarkMode
-                ? t("buttons.darkMode")
-                : t("buttons.lightMode"),
-            }),
-          },
-        },
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+        storeAction: StoreAction.NONE,
       };
     } catch (error: any) {
       console.error(error);
       return {
         appState: {
+          ...appState,
           errorMessage: error.message,
         },
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+        storeAction: StoreAction.NONE,
       };
     }
   },
@@ -197,7 +175,7 @@ export const actionCopyAsPng = register({
   perform: async (elements, appState, _data, app) => {
     if (!app.canvas) {
       return {
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+        storeAction: StoreAction.NONE,
       };
     }
     const selectedElements = app.scene.getSelectedElements({
@@ -231,7 +209,7 @@ export const actionCopyAsPng = register({
             }),
           },
         },
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+        storeAction: StoreAction.NONE,
       };
     } catch (error: any) {
       console.error(error);
@@ -240,7 +218,7 @@ export const actionCopyAsPng = register({
           ...appState,
           errorMessage: error.message,
         },
-        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+        storeAction: StoreAction.NONE,
       };
     }
   },
@@ -267,7 +245,7 @@ export const copyText = register({
       throw new Error(t("errors.copyToSystemClipboardFailed"));
     }
     return {
-      captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      storeAction: StoreAction.NONE,
     };
   },
   predicate: (elements, appState, _, app) => {

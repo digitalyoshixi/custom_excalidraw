@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import type { Emitter } from "../emitter";
 
 export const useEmitter = <TEvent extends unknown>(
